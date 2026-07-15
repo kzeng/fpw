@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "settings": {
+    "projectName": "firmwareflow-basic"
+  },
+  "nodes": [
+    {
+      "id": "input-1",
+      "kind": "input",
+      "label": "Input1",
+      "params": {
+        "order": "0",
+        "output": "Input1",
+        "example": "fixtures/app.bin"
+      }
+    },
+    {
+      "id": "fill-1",
+      "kind": "fill",
+      "label": "Fill",
+      "params": {
+        "range": "0x04:0x07",
+        "value": "0xFF",
+        "output": "FILLED"
+      }
+    },
+    {
+      "id": "sha-1",
+      "kind": "sha256-bin",
+      "label": "SHA256",
+      "params": {
+        "range": "0x00:0x0F",
+        "output": "DIGEST"
+      }
+    },
+    {
+      "id": "output-1",
+      "kind": "output",
+      "label": "Output1",
+      "params": {
+        "input": "DIGEST",
+        "target": "file",
+        "output": "out/imported-digest.bin"
+      }
+    }
+  ],
+  "edges": [
+    { "source": "input-1", "target": "fill-1", "targetHandle": "input" },
+    { "source": "fill-1", "target": "sha-1", "targetHandle": "input" },
+    { "source": "sha-1", "target": "output-1", "targetHandle": "input" }
+  ]
+}
+

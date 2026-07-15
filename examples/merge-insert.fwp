@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "name": "merge-insert",
+  "description": "Merge boot and app binaries, then insert metadata.",
+  "steps": [
+    {
+      "id": "boot",
+      "kind": "input",
+      "name": "boot",
+      "path": "fixtures/boot.bin"
+    },
+    {
+      "id": "app",
+      "kind": "input",
+      "name": "app",
+      "path": "fixtures/app.bin"
+    },
+    {
+      "id": "metadata",
+      "kind": "input",
+      "name": "metadata",
+      "path": "fixtures/metadata.bin"
+    },
+    {
+      "id": "merge",
+      "kind": "merge",
+      "output": "merged",
+      "parts": [
+        { "input": "boot", "offset": "0x0" },
+        { "input": "app", "offset": "0x1000" }
+      ]
+    },
+    {
+      "id": "insert_metadata",
+      "kind": "insert",
+      "base": "merged",
+      "insert": "metadata",
+      "output": "image",
+      "offset": "0x80"
+    },
+    {
+      "id": "write_image",
+      "kind": "output",
+      "input": "image",
+      "name": "image",
+      "path": "out/merged.bin"
+    }
+  ]
+}
+

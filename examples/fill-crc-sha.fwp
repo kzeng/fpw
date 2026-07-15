@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "fill-crc-sha",
+  "description": "Fill a gap, write CRC32, export image, and export SHA256 digest.",
+  "steps": [
+    {
+      "id": "firmware",
+      "kind": "input",
+      "name": "firmware",
+      "path": "fixtures/app.bin"
+    },
+    {
+      "id": "fill_gap",
+      "kind": "fill",
+      "input": "firmware",
+      "output": "filled",
+      "offset": "0x04",
+      "length": 4,
+      "value": "0xFF"
+    },
+    {
+      "id": "write_crc",
+      "kind": "crc32",
+      "input": "filled",
+      "output": "with_crc",
+      "range": { "offset": "0x0", "length": 16 },
+      "writeOffset": "0x14",
+      "endian": "little"
+    },
+    {
+      "id": "digest",
+      "kind": "sha256",
+      "input": "with_crc",
+      "output": "digest"
+    },
+    {
+      "id": "write_image",
+      "kind": "output",
+      "input": "with_crc",
+      "name": "image",
+      "path": "out/image.bin"
+    },
+    {
+      "id": "write_digest",
+      "kind": "output",
+      "input": "digest",
+      "name": "digest",
+      "path": "out/image.sha256.bin"
+    }
+  ]
+}
