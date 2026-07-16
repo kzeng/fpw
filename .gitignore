@@ -9,6 +9,7 @@ web/dist/
 .DS_Store
 *.log
 fpw-reports/
+fpw-web-output/
 .env
 .env.*
 !.env.example

@@ -1,8 +1,10 @@
 # FPW - Firmware Packaging Workflow
 
-[中文说明](README-CN.md) | [User Manual / 用户手册](User-Manual.md) | [FWP Schema](docs/fwp-schema-v1.md)
+[中文说明](README-CN.md) | [User Manual](User-Manual.md) | [中文用户手册](User-Manual-CN.md) | [FWP Schema](docs/fwp-schema-v1.md)
 
 FPW is a local-first firmware packaging workflow tool for repeatable raw binary image processing.
+
+Current version: **v0.0.1**
 
 - `fpw` is the primary CLI workflow runner.
 - `fpw web` starts a local WebUI for creating, managing, previewing, and running workflows.
@@ -78,6 +80,8 @@ Paths declared inside a workflow are resolved relative to the `.fwp` file. CLI i
 
 ## WebUI Workflow
 
+![FPW workflow library](docs/images/webui-library-en.png)
+
 The WebUI separates the user journey into three task areas:
 
 1. Manage `.fwp` files in the workflow library.
@@ -85,6 +89,8 @@ The WebUI separates the user journey into three task areas:
 3. Select a saved workflow, preview it, and run it.
 
 Run Preview displays a copyable `fpw run` command matching the selected workflow and current path overrides. The command can be executed in another terminal where `fpw` is available. If it is not on `PATH`, replace `fpw` with `.\target\release\fpw.exe`.
+
+![FPW Run Preview with CLI command](docs/images/webui-run-preview-en.png)
 
 Web-managed workflows are stored under `workflows/` by default. Archived files move to `workflows/.trash/` instead of being permanently deleted.
 
@@ -126,5 +132,3 @@ cargo clippy --workspace --all-targets -- -D warnings
 Set-Location web
 npm run build
 ```
-
-Deferred features and implementation history are tracked in [dev_log.md](dev_log.md).

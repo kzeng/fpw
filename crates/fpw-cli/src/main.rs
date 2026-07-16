@@ -15,6 +15,7 @@ mod workflow_store;
 #[derive(Debug, Parser)]
 #[command(name = "fpw")]
 #[command(about = "Firmware Packaging Workflow")]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

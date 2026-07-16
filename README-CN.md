@@ -1,8 +1,10 @@
 # FPW - 固件打包工作流
 
-[English](README.md) | [用户手册](User-Manual.md) | [FWP Schema](docs/fwp-schema-v1.md)
+[English](README.md) | [User Manual](User-Manual.md) | [中文用户手册](User-Manual-CN.md) | [FWP Schema](docs/fwp-schema-v1.md)
 
 FPW 是一个本地优先的固件打包工作流工具，用于可重复地处理原始二进制固件镜像。
+
+当前版本：**v0.0.1**
 
 - `fpw` 是主要的命令行执行器。
 - `fpw web` 启动本地 WebUI，用于创建、管理、预览和执行工作流。
@@ -78,6 +80,8 @@ fpw recent add <workflow.fwp>
 
 ## WebUI 使用流程
 
+![FPW 中文工作流库](docs/images/webui-library-zh.png)
+
 WebUI 将操作划分为三个任务区域：
 
 1. 在工作流文件库中管理 `.fwp` 文件。
@@ -85,6 +89,8 @@ WebUI 将操作划分为三个任务区域：
 3. 选择已保存的工作流，预览并执行。
 
 Run Preview 会生成与当前工作流和路径覆盖一致的 `fpw run` 命令。可以复制到另一个已安装 FPW 的终端执行。如果 `fpw` 不在 `PATH` 中，将命令开头替换为 `.\target\release\fpw.exe`。
+
+![FPW 中文运行预览和 CLI 命令](docs/images/webui-run-preview-zh.png)
 
 WebUI 默认把受管工作流保存在 `workflows/`。归档操作会将文件移动到 `workflows/.trash/`，不会永久删除。
 
@@ -116,5 +122,3 @@ docs/              Schema 和架构文档
 examples/          示例工作流和二进制输入
 workflows/         WebUI 默认管理的工作流文件库
 ```
-
-完整操作和示例请阅读 [User-Manual.md](User-Manual.md)。功能规划和实现记录见 [dev_log.md](dev_log.md)。
