@@ -718,10 +718,9 @@ fn write_response(stream: &mut TcpStream, response: &HttpResponse) -> fpw_core::
 }
 
 fn static_asset(request_path: &str) -> fpw_core::Result<Option<(&'static str, Vec<u8>)>> {
-    let dist = Path::new("web").join("dist");
-    if !dist.is_dir() {
+    let Some(dist) = find_web_dist_dir() else {
         return Ok(None);
-    }
+    };
     let relative = request_path.trim_start_matches('/');
     if relative.contains("..") {
         return Ok(None);
@@ -741,6 +740,25 @@ fn static_asset(request_path: &str) -> fpw_core::Result<Option<(&'static str, Ve
     }
     let content_type = content_type_for_path(&path);
     Ok(Some((content_type, fs::read(path)?)))
+}
+
+fn find_web_dist_dir() -> Option<PathBuf> {
+    web_dist_candidates().into_iter().find(|path| path.is_dir())
+}
+
+fn web_dist_candidates() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+    candidates.push(Path::new("web").join("dist"));
+
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(exe_dir) = current_exe.parent() {
+            candidates.push(exe_dir.join("web").join("dist"));
+            candidates.push(exe_dir.join("dist"));
+        }
+    }
+
+    candidates.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist"));
+    candidates
 }
 
 fn content_type_for_path(path: &Path) -> &'static str {
@@ -789,6 +807,13 @@ mod tests {
         drop(registration);
         assert!(!path.exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn web_dist_candidates_include_manifest_relative_path() {
+        assert!(web_dist_candidates()
+            .iter()
+            .any(|path| path.ends_with("web/dist")));
     }
 
     fn workflow_json(input_path: &Path, output_path: &Path) -> serde_json::Value {
