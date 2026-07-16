@@ -49,13 +49,32 @@ pub fn run_workflow(
 ) -> Result<ExecutionReport> {
     validate_workflow(workflow)?;
 
+    let workflow_bytes = fs::read(workflow_path)?;
+    run_validated_workflow(workflow_path, &workflow_bytes, workflow, options)
+}
+
+pub fn run_workflow_source(
+    workflow_path: &Path,
+    workflow_source: &[u8],
+    workflow: &Workflow,
+    options: &RunOptions,
+) -> Result<ExecutionReport> {
+    validate_workflow(workflow)?;
+    run_validated_workflow(workflow_path, workflow_source, workflow, options)
+}
+
+fn run_validated_workflow(
+    workflow_path: &Path,
+    workflow_bytes: &[u8],
+    workflow: &Workflow,
+    options: &RunOptions,
+) -> Result<ExecutionReport> {
     let base_dir = workflow_path.parent().unwrap_or_else(|| Path::new("."));
     let started_at = unix_ms_now();
     let mut artifacts: BTreeMap<String, Vec<u8>> = BTreeMap::new();
     let mut step_reports = Vec::new();
     let mut file_reports = Vec::new();
-    let workflow_bytes = fs::read(workflow_path)?;
-    let workflow_sha256 = sha256_hex(&workflow_bytes);
+    let workflow_sha256 = sha256_hex(workflow_bytes);
     let mut status = ReportStatus::Success;
 
     for step in &workflow.steps {

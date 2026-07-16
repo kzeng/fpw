@@ -137,17 +137,12 @@ pub struct ByteRange {
     pub length: NumberValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Endian {
+    #[default]
     Little,
     Big,
-}
-
-impl Default for Endian {
-    fn default() -> Self {
-        Self::Little
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -5,7 +5,7 @@ pub mod recent;
 pub mod report;
 pub mod validate;
 
-pub use execute::{preview_workflow, run_workflow, RunOptions};
+pub use execute::{preview_workflow, run_workflow, run_workflow_source, RunOptions};
 pub use model::{Workflow, WorkflowStep};
 pub use report::{ExecutionReport, ReportFormat};
 pub use validate::validate_workflow;

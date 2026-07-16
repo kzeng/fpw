@@ -460,3 +460,62 @@ FPW 需要明确是否只是复刻 FirmwareFlow，还是在交互形态、跨平
   - 已改为 workflow 内路径相对 `.fwp`，CLI `--input/--output` override 相对当前工作目录。
 - `fpw web` 原本只有占位页：
   - 已支持服务 `web/dist`。
+
+## 2026-07-16
+
+### WebUI 与核心执行引擎连接
+
+- 新增本地工作流 API：
+  - `POST /api/workflows/validate`
+  - `POST /api/workflows/preview`
+  - `POST /api/workflows/run`
+- API 直接接收并执行浏览器当前编辑的 workflow JSON，避免运行磁盘上的旧版本。
+- `run` API 支持：
+  - 工作流基准路径，用于解析 workflow 内的相对路径。
+  - 命名 input/output 路径覆盖。
+  - 报告目录覆盖。
+  - 返回完整执行报告、JSON/TXT 报告路径和 warning。
+- 本地 HTTP 请求读取改为按 `Content-Length` 接收完整 body，并限制为 2 MiB。
+- WebUI 已加入：
+  - Validate、Preview、Run workflow 操作。
+  - 工作流基准路径配置。
+  - `name=path` 输入输出覆盖配置。
+  - 步骤执行状态、文件信息、错误和报告路径展示。
+- 新增 3 个 API 测试，覆盖校验、结构化错误、预览和真实工作流执行。
+
+### WebUI 工作流创建与管理闭环
+
+- WebUI 已重构为三个独立任务区：
+  - 工作流库。
+  - 五步创建/编辑向导。
+  - 独立运行与报告页面。
+- 默认工作流管理目录为 `workflows/`，可通过 `FPW_WORKFLOW_HOME` 覆盖。
+- 新增工作流管理 API：
+  - 列表、打开、创建、保存。
+  - 复制和可恢复归档。
+  - 导入 `.fwp` 和 FirmwareFlow `.ffc`。
+- 所有库内目标路径必须是无 `..` 的相对 `.fwp` 路径。
+- 归档操作把文件移动到工作流库的 `.trash/`，不做永久删除。
+- 创建向导阶段：
+  1. 基本信息。
+  2. 输入定义。
+  3. `fill`、`insert`、`merge`、`crc32`、`sha256` 处理步骤。
+  4. 输出定义。
+  5. 核心校验、预览和保存。
+- JSON 编辑器保留在最终检查阶段的高级模式中。
+- 独立运行页根据工作流声明自动生成输入和输出表单，留空时保留 `.fwp` 的相对路径语义。
+- 新增工作流存储单元测试，并完成管理 API 全流程端到端验证。
+
+### WebUI 中英双语
+
+- WebUI 支持 English 和简体中文即时切换。
+- 新用户首次打开默认使用 English。
+- 用户选择保存在浏览器 `localStorage` 的 `fpw-language` 中。
+- 翻译范围覆盖工作流库、创建向导、步骤表单、运行页、结果页以及确认提示。
+- 工作流名称、路径、步骤 ID、artifact、报告和后端错误保持原始数据，不做翻译。
+
+### Run Preview CLI command
+
+- Run Preview displays a copyable `fpw run` command alongside the execution preview.
+- The command contains the selected managed workflow path, non-empty input/output overrides, and report directory.
+- Web execution reports now store the same canonical CLI argument structure.

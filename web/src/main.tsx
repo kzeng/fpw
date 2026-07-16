@@ -1,139 +1,107 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { getHealth, getRecentProjects, type RecentProject } from "./api";
+import {
+  archiveWorkflow,
+  duplicateWorkflow,
+  getHealth,
+  importWorkflow,
+  listWorkflows,
+  openWorkflow,
+} from "./api";
+import { LibraryView } from "./components/LibraryView";
+import { RunView } from "./components/RunView";
+import { WizardView } from "./components/WizardView";
+import { emptyWorkflow, type OpenWorkflow, type Workflow, type WorkflowSummary } from "./workflow";
+import { I18nProvider, useI18n } from "./i18n";
 import "./styles.css";
 
-type StepKind = "input" | "output" | "fill" | "insert" | "merge" | "crc32" | "sha256";
-
-type WorkflowStep = {
-  id: string;
-  kind: StepKind;
-  [key: string]: unknown;
-};
-
-type Workflow = {
-  schemaVersion: 1;
-  name: string;
-  description?: string;
-  steps: WorkflowStep[];
-};
-
-const initialWorkflow: Workflow = {
-  schemaVersion: 1,
-  name: "workflow",
-  description: "Local FPW workflow draft",
-  steps: [
-    { id: "firmware", kind: "input", name: "firmware", path: "input.bin" },
-    { id: "write_image", kind: "output", input: "firmware", name: "image", path: "out/image.bin" },
-  ],
-};
+type View = "library" | "wizard" | "run";
 
 function App() {
-  const [workflowText, setWorkflowText] = useState(() => JSON.stringify(initialWorkflow, null, 2));
+  const { language, setLanguage, t } = useI18n();
+  const [view, setView] = useState<View>("library");
   const [serviceStatus, setServiceStatus] = useState("checking");
-  const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
-  const parsed = useMemo(() => {
-    try {
-      return { workflow: JSON.parse(workflowText) as Workflow, error: null };
-    } catch (error) {
-      return { workflow: null, error: error instanceof Error ? error.message : String(error) };
-    }
-  }, [workflowText]);
+  const [root, setRoot] = useState("workflows");
+  const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
+  const [selected, setSelected] = useState<OpenWorkflow | null>(null);
+  const [draft, setDraft] = useState<Workflow>(emptyWorkflow());
+  const [draftPath, setDraftPath] = useState("workflow.fwp");
+  const [isNew, setIsNew] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
-  const stepCount = parsed.workflow?.steps?.length ?? 0;
+  async function refreshLibrary() {
+    setBusy(true);
+    try {
+      const response = await listWorkflows();
+      setRoot(response.root);
+      setWorkflows(response.workflows);
+      setError("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
-    let active = true;
-
-    Promise.all([getHealth(), getRecentProjects()])
-      .then(([health, recent]) => {
-        if (!active) return;
-        setServiceStatus(health.status);
-        setRecentProjects(recent.projects);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setServiceStatus(error instanceof Error ? error.message : "offline");
-      });
-
-    return () => {
-      active = false;
-    };
+    getHealth().then((health) => setServiceStatus(health.status)).catch(() => setServiceStatus("offline"));
+    refreshLibrary();
   }, []);
+
+  async function load(path: string, target: "wizard" | "run") {
+    setBusy(true);
+    try {
+      const opened = await openWorkflow(path);
+      setSelected(opened);
+      if (target === "wizard") {
+        setDraft(opened.workflow);
+        setDraftPath(opened.path);
+        setIsNew(false);
+      }
+      setView(target);
+      setError("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function beginNew() {
+    setDraft(emptyWorkflow());
+    setDraftPath("workflow.fwp");
+    setIsNew(true);
+    setView("wizard");
+  }
+
+  async function libraryAction(action: () => Promise<unknown>) {
+    setBusy(true);
+    try {
+      await action();
+      await refreshLibrary();
+      setError("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+      setBusy(false);
+    }
+  }
 
   return (
     <main className="appShell">
       <header className="topBar">
-        <div>
-          <h1>FPW</h1>
-          <p>Firmware Packaging Workflow</p>
-        </div>
-        <div className="statusPill">{parsed.error ? "Invalid JSON" : `${stepCount} steps`}</div>
+        <button className="brandButton" onClick={() => setView("library")}><span className="brandMark">FPW</span><span><b>Firmware workbench</b><small>{t("Author · manage · execute")}</small></span></button>
+        <nav className="primaryNav"><button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>{t("Workflow library")}</button><button className={view === "wizard" ? "active" : ""} onClick={beginNew}>{t("Create workflow")}</button>{selected ? <button className={view === "run" ? "active" : ""} onClick={() => setView("run")}>{t("Run")}</button> : null}</nav>
+        <div className="topUtilities"><div className="languageSwitch" aria-label="Language"><button className={language === "en" ? "active" : ""} onClick={() => setLanguage("en")}>EN</button><button className={language === "zh" ? "active" : ""} onClick={() => setLanguage("zh")}>中文</button></div><div className={`servicePill ${serviceStatus === "ok" ? "online" : ""}`}><span /> Core {serviceStatus}</div></div>
       </header>
 
-      <section className="workspace">
-        <aside className="sidePanel">
-          <h2>Workflow</h2>
-          <dl>
-            <div>
-              <dt>Name</dt>
-              <dd>{parsed.workflow?.name ?? "-"}</dd>
-            </div>
-            <div>
-              <dt>Schema</dt>
-              <dd>{parsed.workflow?.schemaVersion ?? "-"}</dd>
-            </div>
-          </dl>
-          <h2>Service</h2>
-          <dl>
-            <div>
-              <dt>Status</dt>
-              <dd>{serviceStatus}</dd>
-            </div>
-          </dl>
-          <h2>Recent</h2>
-          <ol className="recentList">
-            {recentProjects.length === 0 ? (
-              <li className="emptyListItem">No recent projects</li>
-            ) : (
-              recentProjects.map((project) => (
-                <li key={project.path}>
-                  <strong>{project.name}</strong>
-                  <span>{project.path}</span>
-                </li>
-              ))
-            )}
-          </ol>
-          <h2>Steps</h2>
-          <ol className="stepList">
-            {parsed.workflow?.steps?.map((step) => (
-              <li key={step.id}>
-                <strong>{step.id}</strong>
-                <span>{step.kind}</span>
-              </li>
-            )) ?? null}
-          </ol>
-        </aside>
-
-        <section className="editorPanel">
-          <div className="panelHeader">
-            <h2>.fwp JSON</h2>
-            <span>{parsed.error ?? "Ready for CLI execution"}</span>
-          </div>
-          <textarea
-            aria-label="Workflow JSON"
-            spellCheck={false}
-            value={workflowText}
-            onChange={(event) => setWorkflowText(event.target.value)}
-          />
-        </section>
-      </section>
+      <div className="appContent">
+        {view === "library" ? <LibraryView root={root} workflows={workflows} busy={busy} error={error} onNew={beginNew} onEdit={(path) => load(path, "wizard")} onRun={(path) => load(path, "run")} onRefresh={refreshLibrary} onDuplicate={(source, target) => libraryAction(() => duplicateWorkflow(source, target))} onArchive={(path) => libraryAction(() => archiveWorkflow(path))} onImport={(kind, source, target) => libraryAction(() => importWorkflow(kind, source, target))} /> : null}
+        {view === "wizard" ? <WizardView key={`${isNew}-${draftPath}`} initialWorkflow={draft} initialPath={draftPath} isNew={isNew} onCancel={() => setView("library")} onSaved={async (path) => { await refreshLibrary(); await load(path, "run"); }} /> : null}
+        {view === "run" && selected ? <RunView key={selected.path} selected={selected} onBack={() => setView("library")} onEdit={() => load(selected.path, "wizard")} /> : null}
+      </div>
     </main>
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+createRoot(document.getElementById("root")!).render(<React.StrictMode><I18nProvider><App /></I18nProvider></React.StrictMode>);

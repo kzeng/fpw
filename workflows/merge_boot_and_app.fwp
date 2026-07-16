@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "name": "merge_boot_and_app",
+  "description": "merge boot.bin and  app.bin",
+  "steps": [
+    {
+      "kind": "input",
+      "id": "input_1",
+      "name": "input_1_boot",
+      "path": "boot.bin"
+    },
+    {
+      "kind": "input",
+      "id": "input_2",
+      "name": "input_2_app",
+      "path": "app.bin"
+    },
+    {
+      "kind": "merge",
+      "id": "merge_3",
+      "output": "merged_3",
+      "parts": [
+        {
+          "input": "input_1_boot",
+          "offset": "0x0"
+        },
+        {
+          "input": "input_2_app",
+          "offset": "0x1000"
+        }
+      ]
+    },
+    {
+      "kind": "output",
+      "id": "output_1",
+      "input": "merged_3",
+      "name": "output_1",
+      "path": "out/output_1.bin"
+    }
+  ]
+}
