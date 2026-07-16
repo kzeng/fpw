@@ -7,7 +7,7 @@ Output:
 
 本文介绍 FPW 在 Windows 下的构建方法、CLI/WebUI 使用方式、路径规则，以及常用二进制处理步骤的简单用例。
 
-本文档对应版本：**v0.0.1**
+本文档对应版本：**v0.0.2**
 
 ## 1. 构建与启动
 
@@ -55,6 +55,25 @@ Release 可执行文件为：
 
 ```text
 target\release\fpw.exe
+```
+
+### 1.4 自动打包 Release
+
+```powershell
+.\scripts\package-release.ps1
+```
+
+脚本会从 `Cargo.toml` 读取版本号，构建 WebUI 和独立的 Release CLI，然后生成：
+
+```text
+release\FPW-v0.0.2\
+release\FPW-v0.0.2.zip
+```
+
+如果已经完成构建，可跳过重复构建：
+
+```powershell
+.\scripts\package-release.ps1 -SkipBuild
 ```
 
 ## 2. `.fwp` 基本结构
@@ -165,6 +184,16 @@ Preview 只输出计划执行的步骤，不读取或修改固件文件。
 ```
 
 访问 `http://127.0.0.1:4769/`。这是本机服务，关闭启动终端或结束 `fpw.exe` 后页面将无法继续调用执行引擎。
+
+在另一个终端停止或重启已登记的服务：
+
+```powershell
+.\target\release\fpw.exe web stop
+.\target\release\fpw.exe web restart
+.\target\release\fpw.exe web restart --host 127.0.0.1 --port 4769
+```
+
+FPW 会在本地配置目录记录活动 WebUI 的 PID、host、port 和版本。`restart` 默认复用已记录的地址，也可以显式覆盖。若记录已经过期，命令只清理记录，不会终止不相关进程。
 
 ### 4.2 工作流文件库
 

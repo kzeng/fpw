@@ -1,17 +1,92 @@
 use crate::workflow_store::WorkflowStore;
 use fpw_core::{preview_workflow, run_workflow_source, validate_workflow, RunOptions, Workflow};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     collections::BTreeMap,
-    fs,
+    fs::{self, OpenOptions},
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     path::{Path, PathBuf},
+    process::Command,
+    thread,
     time::Duration,
 };
 
 const MAX_REQUEST_BYTES: usize = 2 * 1024 * 1024;
+const WEB_SERVER_FILE: &str = "web-server.json";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebServerInfo {
+    pub pid: u32,
+    pub host: String,
+    pub port: u16,
+    pub version: String,
+}
+
+struct WebServerRegistration {
+    path: PathBuf,
+    pid: u32,
+}
+
+impl WebServerRegistration {
+    fn acquire(host: &str, port: u16) -> fpw_core::Result<Self> {
+        Self::acquire_at(web_server_path(), host, port)
+    }
+
+    fn acquire_at(path: PathBuf, host: &str, port: u16) -> fpw_core::Result<Self> {
+        Self::acquire_at_with(path, host, port, process_matches_fpw)
+    }
+
+    fn acquire_at_with(
+        path: PathBuf,
+        host: &str,
+        port: u16,
+        is_fpw_process: impl Fn(u32) -> bool,
+    ) -> fpw_core::Result<Self> {
+        if let Some(existing) = read_web_server_info(&path)? {
+            if is_fpw_process(existing.pid) {
+                return Err(fpw_core::FpwError::Message(format!(
+                    "FPW WebUI is already running at http://{}:{} (PID {})",
+                    existing.host, existing.port, existing.pid
+                )));
+            }
+            fs::remove_file(&path)?;
+        }
+
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let info = WebServerInfo {
+            pid: std::process::id(),
+            host: host.to_string(),
+            port,
+            version: env!("CARGO_PKG_VERSION").to_string(),
+        };
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path)?;
+        file.write_all(&serde_json::to_vec_pretty(&info)?)?;
+        Ok(Self {
+            path,
+            pid: info.pid,
+        })
+    }
+}
+
+impl Drop for WebServerRegistration {
+    fn drop(&mut self) {
+        if read_web_server_info(&self.path)
+            .ok()
+            .flatten()
+            .is_some_and(|info| info.pid == self.pid)
+        {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
+}
 
 #[derive(Debug)]
 struct HttpRequest {
@@ -73,6 +148,7 @@ struct ImportWorkflowRequest {
 }
 
 pub fn serve_web(host: &str, port: u16) -> fpw_core::Result<()> {
+    let _registration = WebServerRegistration::acquire(host, port)?;
     let address = format!("{host}:{port}");
     let listener = TcpListener::bind(&address)?;
     println!("FPW WebUI listening at http://{address}");
@@ -89,6 +165,135 @@ pub fn serve_web(host: &str, port: u16) -> fpw_core::Result<()> {
         }
     }
     Ok(())
+}
+
+pub fn stop_web() -> fpw_core::Result<Option<WebServerInfo>> {
+    let path = web_server_path();
+    let Some(info) = read_web_server_info(&path)? else {
+        println!("FPW WebUI is not running (no server record found).");
+        return Ok(None);
+    };
+
+    if !process_matches_fpw(info.pid) {
+        fs::remove_file(&path)?;
+        println!(
+            "Removed stale FPW WebUI server record for PID {}.",
+            info.pid
+        );
+        return Ok(Some(info));
+    }
+
+    terminate_process(info.pid)?;
+    for _ in 0..30 {
+        if !process_matches_fpw(info.pid) {
+            break;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    if process_matches_fpw(info.pid) {
+        return Err(fpw_core::FpwError::Message(format!(
+            "FPW WebUI process {} did not stop",
+            info.pid
+        )));
+    }
+    if path.is_file() {
+        fs::remove_file(&path)?;
+    }
+    println!("Stopped FPW WebUI process {}.", info.pid);
+    Ok(Some(info))
+}
+
+fn web_server_path() -> PathBuf {
+    fpw_core::recent::app_data_dir().join(WEB_SERVER_FILE)
+}
+
+fn read_web_server_info(path: &Path) -> fpw_core::Result<Option<WebServerInfo>> {
+    if !path.is_file() {
+        return Ok(None);
+    }
+    Ok(Some(serde_json::from_slice(&fs::read(path)?)?))
+}
+
+#[cfg(windows)]
+fn process_matches_fpw(pid: u32) -> bool {
+    let Ok(output) = Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+        .output()
+    else {
+        return false;
+    };
+    if !output.status.success() {
+        return false;
+    }
+    let expected = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.file_name().map(|name| name.to_owned()));
+    let text = String::from_utf8_lossy(&output.stdout);
+    let image = text
+        .lines()
+        .next()
+        .and_then(|line| line.split(',').next())
+        .map(|field| field.trim().trim_matches('"'));
+    image.is_some_and(|image| {
+        expected
+            .as_deref()
+            .and_then(|name| name.to_str())
+            .is_some_and(|expected| image.eq_ignore_ascii_case(expected))
+    })
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn process_matches_fpw(pid: u32) -> bool {
+    match (
+        fs::read_link(format!("/proc/{pid}/exe")),
+        std::env::current_exe(),
+    ) {
+        (Ok(process), Ok(current)) => process == current,
+        _ => false,
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn process_matches_fpw(pid: u32) -> bool {
+    let Ok(output) = Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "comm="])
+        .output()
+    else {
+        return false;
+    };
+    let current = std::env::current_exe().ok();
+    output.status.success()
+        && current.is_some_and(|path| {
+            String::from_utf8_lossy(&output.stdout).trim() == path.to_string_lossy()
+        })
+}
+
+#[cfg(windows)]
+fn terminate_process(pid: u32) -> fpw_core::Result<()> {
+    let status = Command::new("taskkill")
+        .args(["/PID", &pid.to_string(), "/T", "/F"])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(fpw_core::FpwError::Message(format!(
+            "taskkill failed for FPW WebUI process {pid}"
+        )))
+    }
+}
+
+#[cfg(unix)]
+fn terminate_process(pid: u32) -> fpw_core::Result<()> {
+    let status = Command::new("kill")
+        .args(["-TERM", &pid.to_string()])
+        .status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(fpw_core::FpwError::Message(format!(
+            "kill failed for FPW WebUI process {pid}"
+        )))
+    }
 }
 
 fn respond(mut stream: TcpStream) -> fpw_core::Result<()> {
@@ -563,6 +768,28 @@ fn fallback_page() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn web_server_registration_is_exclusive_and_cleans_up() {
+        let root =
+            std::env::temp_dir().join(format!("fpw-web-registration-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let path = root.join("web-server.json");
+        let registration =
+            WebServerRegistration::acquire_at_with(path.clone(), "127.0.0.1", 4769, |_| true)
+                .unwrap();
+        let info = read_web_server_info(&path).unwrap().unwrap();
+        assert_eq!(info.pid, std::process::id());
+        assert_eq!(info.host, "127.0.0.1");
+        assert_eq!(info.port, 4769);
+        assert!(
+            WebServerRegistration::acquire_at_with(path.clone(), "127.0.0.1", 4770, |_| true,)
+                .is_err()
+        );
+        drop(registration);
+        assert!(!path.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     fn workflow_json(input_path: &Path, output_path: &Path) -> serde_json::Value {
         json!({

@@ -4,7 +4,7 @@
 
 This manual explains how to build FPW on Windows, use its CLI and WebUI, understand path and artifact rules, and create common binary-processing workflows.
 
-Documented release: **v0.0.1**
+Documented release: **v0.0.2**
 
 ## 1. Build and Start
 
@@ -150,6 +150,16 @@ FFC import is best-effort. Review every warning and inspect the generated `.fwp`
 ```
 
 Open `http://127.0.0.1:4769/`. Keep the terminal running because the browser calls this local FPW process for workflow management and execution.
+
+Stop or restart the registered server from another terminal:
+
+```powershell
+.\target\release\fpw.exe web stop
+.\target\release\fpw.exe web restart
+.\target\release\fpw.exe web restart --host 127.0.0.1 --port 4769
+```
+
+FPW records the active WebUI PID, host, port, and version under its local configuration directory. `restart` reuses the recorded address unless overridden. A stale record is removed without terminating an unrelated process.
 
 ### 4.2 Workflow Library
 

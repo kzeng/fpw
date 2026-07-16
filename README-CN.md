@@ -4,7 +4,7 @@
 
 FPW 是一个本地优先的固件打包工作流工具，用于可重复地处理原始二进制固件镜像。
 
-当前版本：**v0.0.1**
+当前版本：**v0.0.2**
 
 - `fpw` 是主要的命令行执行器。
 - `fpw web` 启动本地 WebUI，用于创建、管理、预览和执行工作流。
@@ -54,6 +54,24 @@ cargo build --release -p fpw-cli
 
 浏览器访问 `http://127.0.0.1:4769/`。使用 WebUI 期间需要保持启动终端运行。
 
+可在另一个终端停止或重启已登记的 WebUI 服务：
+
+```powershell
+.\target\release\fpw.exe web stop
+.\target\release\fpw.exe web restart
+.\target\release\fpw.exe web restart --host 127.0.0.1 --port 4769
+```
+
+`restart` 默认复用上一次记录的 host 和 port，也可以显式覆盖。
+
+### 自动生成发布包
+
+```powershell
+.\scripts\package-release.ps1
+```
+
+脚本自动读取项目版本、构建 WebUI 和 Release CLI，并生成 `release\FPW-v0.0.2.zip`。使用 `-SkipBuild` 可以基于已有的 `target\release\fpw.exe` 和 `web\dist` 快速重新打包。
+
 ## CLI 命令
 
 ```text
@@ -62,6 +80,8 @@ fpw preview <workflow.fwp>
 fpw run <workflow.fwp> [--input name=path] [--output name=path] [--report-dir path]
 fpw config [--output workflow.fwp]
 fpw web [--host 127.0.0.1] [--port 4769]
+fpw web stop
+fpw web restart [--host 127.0.0.1] [--port 4769]
 fpw import-ffc <workflow.ffc> --output <workflow.fwp>
 fpw recent list
 fpw recent add <workflow.fwp>

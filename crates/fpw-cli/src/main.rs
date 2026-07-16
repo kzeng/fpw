@@ -43,6 +43,8 @@ enum Command {
         output: Option<PathBuf>,
     },
     Web {
+        #[command(subcommand)]
+        command: Option<WebCommand>,
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
         #[arg(long, default_value_t = 4769)]
@@ -63,6 +65,17 @@ enum Command {
 enum RecentCommand {
     List,
     Add { workflow: PathBuf },
+}
+
+#[derive(Debug, Subcommand)]
+enum WebCommand {
+    Stop,
+    Restart {
+        #[arg(long)]
+        host: Option<String>,
+        #[arg(long)]
+        port: Option<u16>,
+    },
 }
 
 fn main() {
@@ -127,9 +140,29 @@ fn run() -> fpw_core::Result<()> {
         Command::Config { output } => {
             write_config(output)?;
         }
-        Command::Web { host, port } => {
-            web::serve_web(&host, port)?;
-        }
+        Command::Web {
+            command,
+            host,
+            port,
+        } => match command {
+            None => web::serve_web(&host, port)?,
+            Some(WebCommand::Stop) => {
+                web::stop_web()?;
+            }
+            Some(WebCommand::Restart {
+                host: restart_host,
+                port: restart_port,
+            }) => {
+                let previous = web::stop_web()?;
+                let host = restart_host
+                    .or_else(|| previous.as_ref().map(|server| server.host.clone()))
+                    .unwrap_or(host);
+                let port = restart_port
+                    .or_else(|| previous.as_ref().map(|server| server.port))
+                    .unwrap_or(port);
+                web::serve_web(&host, port)?;
+            }
+        },
         Command::ImportFfc { source, output } => {
             let result = fpw_core::ffc::import_ffc(&source)?;
             if let Some(parent) = output

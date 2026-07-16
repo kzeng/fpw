@@ -4,7 +4,7 @@
 
 FPW is a local-first firmware packaging workflow tool for repeatable raw binary image processing.
 
-Current version: **v0.0.1**
+Current version: **v0.0.2**
 
 - `fpw` is the primary CLI workflow runner.
 - `fpw web` starts a local WebUI for creating, managing, previewing, and running workflows.
@@ -54,6 +54,16 @@ Start the WebUI:
 
 Open `http://127.0.0.1:4769/`. Keep the terminal open while using the WebUI.
 
+Stop or restart the registered WebUI process from another terminal:
+
+```powershell
+.\target\release\fpw.exe web stop
+.\target\release\fpw.exe web restart
+.\target\release\fpw.exe web restart --host 127.0.0.1 --port 4769
+```
+
+`restart` reuses the last registered host and port unless they are explicitly overridden.
+
 ## CLI
 
 ```text
@@ -62,6 +72,8 @@ fpw preview <workflow.fwp>
 fpw run <workflow.fwp> [--input name=path] [--output name=path] [--report-dir path]
 fpw config [--output workflow.fwp]
 fpw web [--host 127.0.0.1] [--port 4769]
+fpw web stop
+fpw web restart [--host 127.0.0.1] [--port 4769]
 fpw import-ffc <workflow.ffc> --output <workflow.fwp>
 fpw recent list
 fpw recent add <workflow.fwp>

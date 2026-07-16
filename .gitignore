@@ -10,6 +10,7 @@ web/dist/
 *.log
 fpw-reports/
 fpw-web-output/
+release/
 .env
 .env.*
 !.env.example
