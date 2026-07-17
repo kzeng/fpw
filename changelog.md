@@ -24,6 +24,7 @@ FPW 的重要版本变更记录在此文件中。
 - Release 包统一命名为 `FPW-v0.0.2.zip`。
 - `fpw-web-output/` 和 `release/` 加入 Git 忽略规则。
 - WebUI 归档操作改为无文字的垃圾桶图标按钮，导入界面仅提供 FPW `.fwp` 格式。
+- Release ZIP 内随附英文版 `README.md` 和 `User-Manual.md`。
 
 ## v0.0.1 - 2026-07-16
 
@@ -34,4 +35,4 @@ FPW 的重要版本变更记录在此文件中。
 - 支持 `input`、`output`、`fill`、`insert`、`merge`、`crc32` 和 `sha256` 步骤。
 - 提供本地 WebUI、五阶段工作流创建向导和工作流文件库。
 - 支持英文和简体中文界面。
-- 支持 JSON/TXT 执行报告和 FirmwareFlow `.ffc` 尽力导入。
+- 支持 JSON/TXT 执行报告。

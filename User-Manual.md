@@ -125,16 +125,7 @@ Override named paths and the report directory:
 
 `--input` and `--output` may be repeated. Each `name` must match the corresponding `name` field in an input or output file step.
 
-### 3.5 Import FirmwareFlow
-
-```powershell
-.\target\release\fpw.exe import-ffc examples\firmwareflow-basic.ffc `
-  --output workflows\imported.fwp
-```
-
-FFC import is best-effort. Review every warning and inspect the generated `.fwp` before running it.
-
-### 3.6 Recent Projects
+### 3.5 Recent Projects
 
 ```powershell
 .\target\release\fpw.exe recent list
@@ -172,7 +163,7 @@ The library displays the real `.fwp` files managed under `workflows/` by default
 - **Edit** opens the configuration in the wizard.
 - **Duplicate** creates another managed `.fwp` file.
 - **Archive** moves a file to `workflows/.trash/`.
-- **Import** imports `.fwp` or converts `.ffc`.
+- **Import** imports an existing `.fwp` file.
 
 Set a different managed root before starting the server when needed:
 

@@ -21,7 +21,7 @@ Release 下载：[FPW 发布包](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek
 - 支持创建、打开、保存、复制、归档和导入工作流。
 - WebUI 支持英文和简体中文，首次使用默认英文。
 - Run Preview 同时显示执行预览和可复制的 CLI 命令。
-- 对 FirmwareFlow `.ffc` 文件提供尽力转换。
+
 
 ## Windows 快速开始
 
@@ -84,7 +84,6 @@ fpw config [--output workflow.fwp]
 fpw web [--host 127.0.0.1] [--port 4769]
 fpw web stop
 fpw web restart [--host 127.0.0.1] [--port 4769]
-fpw import-ffc <workflow.ffc> --output <workflow.fwp>
 fpw recent list
 fpw recent add <workflow.fwp>
 ```

@@ -159,16 +159,7 @@ Preview 只输出计划执行的步骤，不读取或修改固件文件。
 
 同一个命令可以多次提供 `--input` 和 `--output`，格式必须是 `name=path`。其中 `name` 对应 `.fwp` 中 `input/output` 文件步骤的 `name` 字段。
 
-### 3.5 导入 `.ffc`
-
-```powershell
-.\target\release\fpw.exe import-ffc examples\firmwareflow-basic.ffc `
-  --output workflows\imported.fwp
-```
-
-导入属于尽力转换。遇到当前版本不支持或不能完整表达的 FirmwareFlow 步骤时，CLI 会输出 warning，应在执行前检查生成的 `.fwp`。
-
-### 3.6 最近项目
+### 3.5 最近项目
 
 ```powershell
 .\target\release\fpw.exe recent list
@@ -206,7 +197,7 @@ WebUI 默认管理仓库下的 `workflows/`：
 - Duplicate：复制工作流。
 - Archive：移动到 `workflows/.trash/`。
 - Import FWP：导入已有 `.fwp`。
-- Import FFC：转换并导入 `.ffc`。
+
 
 设置 `FPW_WORKFLOW_HOME` 后可以使用其他受控目录：
 

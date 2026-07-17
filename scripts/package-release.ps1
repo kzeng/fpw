@@ -101,8 +101,8 @@ try {
         $sourceExe,
         (Join-Path $repoRoot "web\dist\index.html"),
         (Join-Path $repoRoot "web\dist\assets"),
-        (Join-Path $repoRoot "README-CN.md"),
-        (Join-Path $repoRoot "User-Manual-CN.md")
+        (Join-Path $repoRoot "README.md"),
+        (Join-Path $repoRoot "User-Manual.md")
     )
     foreach ($requiredPath in $requiredPaths) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
@@ -135,8 +135,8 @@ try {
         Copy-Item -LiteralPath $examplesSource -Destination (Join-Path $packageDirectory "examples") -Recurse
     }
 
-    Copy-Item -LiteralPath (Join-Path $repoRoot "README-CN.md") -Destination $packageDirectory
-    Copy-Item -LiteralPath (Join-Path $repoRoot "User-Manual-CN.md") -Destination $packageDirectory
+    Copy-Item -LiteralPath (Join-Path $repoRoot "README.md") -Destination $packageDirectory
+    Copy-Item -LiteralPath (Join-Path $repoRoot "User-Manual.md") -Destination $packageDirectory
 
     $packagedExe = Join-Path $packageDirectory "fpw.exe"
     $reportedVersion = (& $packagedExe --version).Trim()

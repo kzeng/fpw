@@ -41,7 +41,6 @@ fpw preview workflow.fwp
 fpw run workflow.fwp --input firmware=app.bin --output image=out.bin
 fpw config
 fpw web
-fpw import-ffc workflow.ffc --output workflow.fwp
 fpw recent list
 ```
 
@@ -65,7 +64,6 @@ Routes:
 - `POST /api/workflows/duplicate`
 - `POST /api/workflows/archive`
 - `POST /api/workflows/import/fwp`
-- `POST /api/workflows/import/ffc`
 - `POST /api/workflows/validate`
 - `POST /api/workflows/preview`
 - `POST /api/workflows/run`

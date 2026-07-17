@@ -21,7 +21,7 @@ Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27ne
 - Create, open, save, duplicate, archive, and import workflow operations.
 - English and Simplified Chinese WebUI, with English as the first-use default.
 - Run Preview with both an execution plan and a copyable CLI command.
-- Best-effort FirmwareFlow `.ffc` import for supported steps.
+
 
 ## Quick Start on Windows
 
@@ -76,7 +76,6 @@ fpw config [--output workflow.fwp]
 fpw web [--host 127.0.0.1] [--port 4769]
 fpw web stop
 fpw web restart [--host 127.0.0.1] [--port 4769]
-fpw import-ffc <workflow.ffc> --output <workflow.fwp>
 fpw recent list
 fpw recent add <workflow.fwp>
 ```
