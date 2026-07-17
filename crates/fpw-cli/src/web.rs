@@ -8,7 +8,6 @@ use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     path::{Path, PathBuf},
-    process::Command,
     thread,
     time::Duration,
 };
@@ -216,30 +215,34 @@ fn read_web_server_info(path: &Path) -> fpw_core::Result<Option<WebServerInfo>> 
 
 #[cfg(windows)]
 fn process_matches_fpw(pid: u32) -> bool {
-    let Ok(output) = Command::new("tasklist")
-        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
-        .output()
-    else {
-        return false;
+    use std::{ffi::OsString, os::windows::ffi::OsStringExt};
+    use windows_sys::Win32::{
+        Foundation::CloseHandle,
+        System::Threading::{
+            OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
+        },
     };
-    if !output.status.success() {
+
+    // Native process queries avoid localized tasklist output in Windows PowerShell.
+    let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+    if handle.is_null() {
         return false;
     }
-    let expected = std::env::current_exe()
-        .ok()
-        .and_then(|path| path.file_name().map(|name| name.to_owned()));
-    let text = String::from_utf8_lossy(&output.stdout);
-    let image = text
-        .lines()
-        .next()
-        .and_then(|line| line.split(',').next())
-        .map(|field| field.trim().trim_matches('"'));
-    image.is_some_and(|image| {
-        expected
-            .as_deref()
-            .and_then(|name| name.to_str())
-            .is_some_and(|expected| image.eq_ignore_ascii_case(expected))
-    })
+    let mut buffer = vec![0_u16; 32_768];
+    let mut length = buffer.len() as u32;
+    let result = unsafe { QueryFullProcessImageNameW(handle, 0, buffer.as_mut_ptr(), &mut length) };
+    unsafe { CloseHandle(handle) };
+    if result == 0 {
+        return false;
+    }
+
+    let process_name = PathBuf::from(OsString::from_wide(&buffer[..length as usize]));
+    match (process_name.file_name(), std::env::current_exe().ok()) {
+        (Some(process), Some(current)) => current
+            .file_name()
+            .is_some_and(|expected| process.eq_ignore_ascii_case(expected)),
+        _ => false,
+    }
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -255,7 +258,7 @@ fn process_matches_fpw(pid: u32) -> bool {
 
 #[cfg(target_os = "macos")]
 fn process_matches_fpw(pid: u32) -> bool {
-    let Ok(output) = Command::new("ps")
+    let Ok(output) = std::process::Command::new("ps")
         .args(["-p", &pid.to_string(), "-o", "comm="])
         .output()
     else {
@@ -270,21 +273,37 @@ fn process_matches_fpw(pid: u32) -> bool {
 
 #[cfg(windows)]
 fn terminate_process(pid: u32) -> fpw_core::Result<()> {
-    let status = Command::new("taskkill")
-        .args(["/PID", &pid.to_string(), "/T", "/F"])
-        .status()?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(fpw_core::FpwError::Message(format!(
-            "taskkill failed for FPW WebUI process {pid}"
-        )))
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, WAIT_OBJECT_0},
+        System::Threading::{
+            OpenProcess, TerminateProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE,
+            PROCESS_TERMINATE,
+        },
+    };
+
+    let handle = unsafe { OpenProcess(PROCESS_TERMINATE | PROCESS_SYNCHRONIZE, 0, pid) };
+    if handle.is_null() {
+        return Err(std::io::Error::last_os_error().into());
     }
+    let terminated = unsafe { TerminateProcess(handle, 0) };
+    if terminated == 0 {
+        let error = std::io::Error::last_os_error();
+        unsafe { CloseHandle(handle) };
+        return Err(error.into());
+    }
+    let wait = unsafe { WaitForSingleObject(handle, 5_000) };
+    unsafe { CloseHandle(handle) };
+    if wait != WAIT_OBJECT_0 {
+        return Err(fpw_core::FpwError::Message(format!(
+            "timed out waiting for FPW WebUI process {pid} to stop"
+        )));
+    }
+    Ok(())
 }
 
 #[cfg(unix)]
 fn terminate_process(pid: u32) -> fpw_core::Result<()> {
-    let status = Command::new("kill")
+    let status = std::process::Command::new("kill")
         .args(["-TERM", &pid.to_string()])
         .status()?;
     if status.success() {
@@ -807,6 +826,12 @@ mod tests {
         drop(registration);
         assert!(!path.exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_native_process_check_recognizes_current_fpw_binary() {
+        assert!(process_matches_fpw(std::process::id()));
     }
 
     #[test]

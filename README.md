@@ -6,6 +6,8 @@ FPW is a local-first firmware packaging workflow tool for repeatable raw binary 
 
 Current version: **v0.0.2**
 
+Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek4db3pgi3)
+
 - `fpw` is the primary CLI workflow runner.
 - `fpw web` starts a local WebUI for creating, managing, previewing, and running workflows.
 - `.fwp` files are versioned JSON workflow definitions that can run with or without the WebUI.

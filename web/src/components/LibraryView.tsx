@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Copy, FilePlus2, FolderOpen, Pencil, Play, RefreshCw, Trash2, Upload } from "lucide-react";
 import type { WorkflowSummary } from "../workflow";
 import { useI18n } from "../i18n";
 
@@ -19,7 +20,6 @@ type Props = {
 export function LibraryView(props: Props) {
   const { language, t } = useI18n();
   const [importOpen, setImportOpen] = useState(false);
-  const [importKind, setImportKind] = useState<"fwp" | "ffc">("fwp");
   const [sourcePath, setSourcePath] = useState("");
   const [targetPath, setTargetPath] = useState("imported.fwp");
 
@@ -32,24 +32,24 @@ export function LibraryView(props: Props) {
           <p>{t("Create, maintain, and select repeatable firmware packaging workflows.")}</p>
         </div>
         <div className="headerActions">
-          <button onClick={props.onRefresh} disabled={props.busy}>{t("Refresh")}</button>
-          <button onClick={() => setImportOpen((value) => !value)}>{t("Import")}</button>
-          <button className="primaryButton" onClick={props.onNew}>{t("New workflow")}</button>
+          <button onClick={props.onRefresh} disabled={props.busy}><RefreshCw className={props.busy ? "isSpinning" : ""} size={16} aria-hidden="true" />{t("Refresh")}</button>
+          <button onClick={() => setImportOpen((value) => !value)}><Upload size={16} aria-hidden="true" />{t("Import")}</button>
+          <button className="primaryButton" onClick={props.onNew}><FilePlus2 size={16} aria-hidden="true" />{t("New workflow")}</button>
         </div>
       </header>
 
-      <div className="libraryRoot"><span>{t("Managed directory")}</span><code>{props.root || "workflows"}</code></div>
+      <div className="libraryRoot"><FolderOpen size={16} aria-hidden="true" /><span>{t("Managed directory")}</span><code>{props.root || "workflows"}</code></div>
       {props.error ? <div className="inlineError">{props.error}</div> : null}
 
       {importOpen ? (
         <form className="importPanel" onSubmit={(event) => {
           event.preventDefault();
-          props.onImport(importKind, sourcePath, targetPath);
+          props.onImport("fwp", sourcePath, targetPath);
         }}>
-          <label>{t("Source format")}<select value={importKind} onChange={(event) => setImportKind(event.target.value as "fwp" | "ffc")}><option value="fwp">FPW .fwp</option><option value="ffc">FirmwareFlow .ffc</option></select></label>
+          <label>{t("Source format")}<select value="fwp" disabled><option value="fwp">FPW .fwp</option></select></label>
           <label>{t("Local source path")}<input value={sourcePath} onChange={(event) => setSourcePath(event.target.value)} placeholder="C:/firmware/workflow.fwp" required /></label>
           <label>{t("Library target name")}<input value={targetPath} onChange={(event) => setTargetPath(event.target.value)} required /></label>
-          <button className="primaryButton" disabled={props.busy}>{t("Import to library")}</button>
+          <button className="primaryButton" disabled={props.busy}><Upload size={16} aria-hidden="true" />{t("Import to library")}</button>
         </form>
       ) : null}
 
@@ -58,7 +58,7 @@ export function LibraryView(props: Props) {
           <div className="emptyGlyph">.fwp</div>
           <h3>{t("Your workflow library is empty")}</h3>
           <p>{t("Create your first workflow with the guided authoring flow, or import an existing .fwp / .ffc file.")}</p>
-          <button className="primaryButton" onClick={props.onNew}>{t("Start authoring")}</button>
+          <button className="primaryButton" onClick={props.onNew}><FilePlus2 size={16} aria-hidden="true" />{t("Start authoring")}</button>
         </div>
       ) : (
         <div className="workflowGrid">
@@ -69,15 +69,15 @@ export function LibraryView(props: Props) {
               <p>{workflow.description || t("No description")}</p>
               <time>{new Date(workflow.updatedAtUnixMs).toLocaleString(language === "zh" ? "zh-CN" : "en-US")}</time>
               <div className="cardActions">
-                <button className="primaryButton" onClick={() => props.onRun(workflow.path)}>{t("Run")}</button>
-                <button onClick={() => props.onEdit(workflow.path)}>{t("Edit")}</button>
+                <button className="primaryButton" onClick={() => props.onRun(workflow.path)}><Play size={15} aria-hidden="true" />{t("Run")}</button>
+                <button onClick={() => props.onEdit(workflow.path)}><Pencil size={15} aria-hidden="true" />{t("Edit")}</button>
                 <button onClick={() => {
                   const target = window.prompt(t("Duplicate as a library file"), workflow.path.replace(/\.fwp$/i, "-copy.fwp"));
                   if (target) props.onDuplicate(workflow.path, target);
-                }}>{t("Duplicate")}</button>
-                <button className="dangerButton" onClick={() => {
+                }}><Copy size={15} aria-hidden="true" />{t("Duplicate")}</button>
+                <button className="dangerButton iconButton" title={t("Archive")} aria-label={t("Archive")} onClick={() => {
                   if (window.confirm(t("Move {name} to .trash?", { name: workflow.name }))) props.onArchive(workflow.path);
-                }}>{t("Archive")}</button>
+                }}><Trash2 size={15} aria-hidden="true" /></button>
               </div>
             </article>
           ))}

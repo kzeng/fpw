@@ -159,6 +159,7 @@ dependencies = [
  "fpw-core",
  "serde",
  "serde_json",
+ "windows-sys",
 ]
 
 [[package]]

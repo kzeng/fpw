@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Activity, FilePlus2, LibraryBig, Play } from "lucide-react";
 import {
   archiveWorkflow,
   duplicateWorkflow,
@@ -91,8 +92,8 @@ function App() {
     <main className="appShell">
       <header className="topBar">
         <button className="brandButton" onClick={() => setView("library")}><span className="brandMark">FPW</span><span><b>Firmware workbench</b><small>{t("Author · manage · execute")}</small></span></button>
-        <nav className="primaryNav"><button className={view === "library" ? "active" : ""} onClick={() => setView("library")}>{t("Workflow library")}</button><button className={view === "wizard" ? "active" : ""} onClick={beginNew}>{t("Create workflow")}</button>{selected ? <button className={view === "run" ? "active" : ""} onClick={() => setView("run")}>{t("Run")}</button> : null}</nav>
-        <div className="topUtilities"><div className="languageSwitch" aria-label="Language"><button className={language === "en" ? "active" : ""} onClick={() => setLanguage("en")}>EN</button><button className={language === "zh" ? "active" : ""} onClick={() => setLanguage("zh")}>中文</button></div><div className={`servicePill ${serviceStatus === "ok" ? "online" : ""}`}><span /> Core {serviceStatus}</div></div>
+        <nav className="primaryNav"><button className={view === "library" ? "active" : ""} onClick={() => setView("library")}><LibraryBig size={16} aria-hidden="true" />{t("Workflow library")}</button><button className={view === "wizard" ? "active" : ""} onClick={beginNew}><FilePlus2 size={16} aria-hidden="true" />{t("Create workflow")}</button>{selected ? <button className={view === "run" ? "active" : ""} onClick={() => setView("run")}><Play size={16} aria-hidden="true" />{t("Run")}</button> : null}</nav>
+        <div className="topUtilities"><div className="languageSwitch" aria-label="Language"><button className={language === "en" ? "active" : ""} onClick={() => setLanguage("en")}>EN</button><button className={language === "zh" ? "active" : ""} onClick={() => setLanguage("zh")}>中文</button></div><div className={`servicePill ${serviceStatus === "ok" ? "online" : ""}`}><Activity size={14} aria-hidden="true" /><span /> Core {serviceStatus}</div></div>
       </header>
 
       <div className="appContent">

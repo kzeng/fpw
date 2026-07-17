@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowUp, Braces, Check, ChevronLeft, ChevronRight, FileJson, LoaderCircle, Plus, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { createWorkflow, previewWorkflow, saveWorkflow, validateWorkflow } from "../api";
 import {
   availableArtifacts,
@@ -137,11 +138,11 @@ export function WizardView({ initialWorkflow, initialPath, isNew, onCancel, onSa
     <section className="wizardView">
       <header className="viewHeader compactHeader">
         <div><span className="eyebrow">Guided authoring</span><h2>{isNew ? t("Create workflow") : t("Edit {name}", { name: workflow.name })}</h2><p>{t("Build a reviewable, repeatable .fwp through guided forms.")}</p></div>
-        <button onClick={onCancel}>{t("Back to library")}</button>
+        <button onClick={onCancel}><ArrowLeft size={16} aria-hidden="true" />{t("Back to library")}</button>
       </header>
 
       <nav className="wizardRail" aria-label={t("Create workflow")}>
-        {stages.map((name, index) => <button className={index === stage ? "active" : index < stage ? "complete" : ""} key={name} onClick={() => setStage(index)}><b>{index + 1}</b><span>{name}</span></button>)}
+        {stages.map((name, index) => <button className={index === stage ? "active" : index < stage ? "complete" : ""} key={name} onClick={() => setStage(index)}><b>{index < stage ? <Check size={14} aria-hidden="true" /> : index + 1}</b><span>{name}</span></button>)}
       </nav>
 
       <div className="wizardBody">
@@ -161,7 +162,7 @@ export function WizardView({ initialWorkflow, initialPath, isNew, onCancel, onSa
         {stage >= 1 && stage <= 3 ? (
           <section className="formStage">
             <div className="stageIntro"><span className="stageNumber">0{stage + 1}</span><div><h3>{stages[stage]}</h3><p>{t(stage === 1 ? "Declare the firmware files required at execution time." : stage === 2 ? "Add binary processing operations in execution order." : "Select the artifacts that must be written to disk.")}</p></div></div>
-            {stage === 2 ? <div className="stepPalette">{processingKinds.map((kind) => <button key={kind} onClick={() => addProcessing(kind)}>+ {kind}</button>)}</div> : <button className="addStepButton" onClick={stage === 1 ? addInput : addOutput}>+ {t(stage === 1 ? "Add input" : "Add output")}</button>}
+            {stage === 2 ? <div className="stepPalette">{processingKinds.map((kind) => <button key={kind} onClick={() => addProcessing(kind)}><Plus size={15} aria-hidden="true" />{kind}</button>)}</div> : <button className="addStepButton" onClick={stage === 1 ? addInput : addOutput}><Plus size={16} aria-hidden="true" />{t(stage === 1 ? "Add input" : "Add output")}</button>}
             <div className="stepForms">
               {currentItems.length === 0 ? <div className="stageEmpty">{t("No {stage} yet. Add one above.", { stage: stages[stage].toLowerCase() })}</div> : currentItems.map(({ step, index }) => (
                 <StepEditor key={`${step.id}-${index}`} step={step} index={index} allSteps={workflow.steps} update={(patch) => updateStep(index, patch)} remove={() => removeStep(index)} move={(direction) => moveStep(index, direction)} />
@@ -173,15 +174,15 @@ export function WizardView({ initialWorkflow, initialPath, isNew, onCancel, onSa
         {stage === 4 ? (
           <section className="formStage reviewStage">
             <div className="stageIntro"><span className="stageNumber">05</span><div><h3>{t("Review and save")}</h3><p>{t("Use the same fpw-core validation as the CLI before writing this workflow.")}</p></div></div>
-            <div className="reviewActions"><button onClick={review} disabled={busy}>{t("Validate and preview")}</button><button onClick={() => { setAdvanced(!advanced); setAdvancedText(JSON.stringify(workflow, null, 2)); }}>{t("Advanced JSON")}</button><button className="primaryButton" onClick={save} disabled={busy}>{t(busy ? "Creating..." : isNew ? "Create .fwp" : "Save changes")}</button></div>
+            <div className="reviewActions"><button onClick={review} disabled={busy}>{busy ? <LoaderCircle className="isSpinning" size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}{t("Validate and preview")}</button><button onClick={() => { setAdvanced(!advanced); setAdvancedText(JSON.stringify(workflow, null, 2)); }}><Braces size={16} aria-hidden="true" />{t("Advanced JSON")}</button><button className="primaryButton" onClick={save} disabled={busy}><Save size={16} aria-hidden="true" />{t(busy ? "Creating..." : isNew ? "Create .fwp" : "Save changes")}</button></div>
             {message ? <div className="wizardMessage">{message}</div> : null}
             {preview.length ? <ol className="previewLines">{preview.map((line, index) => <li key={line}><b>{String(index + 1).padStart(2, "0")}</b>{line}</li>)}</ol> : null}
-            {advanced ? <div className="advancedEditor"><textarea value={advancedText} onChange={(event) => setAdvancedText(event.target.value)} spellCheck={false} /><button onClick={applyAdvancedJson}>{t("Apply JSON to wizard")}</button></div> : null}
+            {advanced ? <div className="advancedEditor"><textarea value={advancedText} onChange={(event) => setAdvancedText(event.target.value)} spellCheck={false} /><button onClick={applyAdvancedJson}><FileJson size={16} aria-hidden="true" />{t("Apply JSON to wizard")}</button></div> : null}
           </section>
         ) : null}
       </div>
 
-      <footer className="wizardFooter"><button disabled={stage === 0} onClick={() => setStage((value) => Math.max(0, value - 1))}>{t("Previous")}</button><span>{t("Step {current} of {total}", { current: stage + 1, total: stages.length })}</span><button className="primaryButton" disabled={stage === stages.length - 1} onClick={() => setStage((value) => Math.min(stages.length - 1, value + 1))}>{t("Next")}</button></footer>
+      <footer className="wizardFooter"><button disabled={stage === 0} onClick={() => setStage((value) => Math.max(0, value - 1))}><ChevronLeft size={16} aria-hidden="true" />{t("Previous")}</button><span>{t("Step {current} of {total}", { current: stage + 1, total: stages.length })}</span><button className="primaryButton" disabled={stage === stages.length - 1} onClick={() => setStage((value) => Math.min(stages.length - 1, value + 1))}>{t("Next")}<ChevronRight size={16} aria-hidden="true" /></button></footer>
     </section>
   );
 }
@@ -200,7 +201,7 @@ function StepEditor({ step, index, allSteps, update, remove, move }: {
   const field = (label: string, name: string, placeholder = "") => <label>{t(label)}<input value={String(step[name] ?? "")} placeholder={placeholder} onChange={(event) => update({ [name]: event.target.value })} /></label>;
   return (
     <article className="stepForm">
-      <header><span>{String(index + 1).padStart(2, "0")}</span><b>{step.kind}</b><div><button onClick={() => move(-1)} title={t("Move up")}>↑</button><button onClick={() => move(1)} title={t("Move down")}>↓</button><button className="dangerButton" onClick={remove}>{t("Remove")}</button></div></header>
+      <header><span>{String(index + 1).padStart(2, "0")}</span><b>{step.kind}</b><div><button className="iconButton" onClick={() => move(-1)} title={t("Move up")} aria-label={t("Move up")}><ArrowUp size={15} aria-hidden="true" /></button><button className="iconButton" onClick={() => move(1)} title={t("Move down")} aria-label={t("Move down")}><ArrowDown size={15} aria-hidden="true" /></button><button className="dangerButton" onClick={remove}><Trash2 size={15} aria-hidden="true" />{t("Remove")}</button></div></header>
       <div className="stepFields">
         {field("Step ID", "id")}
         {step.kind === "input" ? <>{field("Input name", "name")}{field("Default file path", "path", "firmware.bin")}</> : null}
@@ -224,5 +225,5 @@ function RangeFields({ step, update }: { step: WorkflowStep; update: (patch: Par
 function MergeFields({ step, artifacts, update }: { step: WorkflowStep; artifacts: string[]; update: (patch: Partial<WorkflowStep>) => void }) {
   const { t } = useI18n();
   const parts = (step.parts ?? []) as Array<{ input: string; offset: unknown }>;
-  return <><label>{t("Output artifact")}<input value={String(step.output ?? "")} onChange={(event) => update({ output: event.target.value })} /></label><div className="mergeParts"><b>{t("Merge parts")}</b>{parts.map((part, index) => <div key={index}><select value={part.input} onChange={(event) => update({ parts: parts.map((item, itemIndex) => itemIndex === index ? { ...item, input: event.target.value } : item) })}><option value="">{t("Select artifact")}</option>{artifacts.map((name) => <option key={name}>{name}</option>)}</select><input value={String(part.offset)} onChange={(event) => update({ parts: parts.map((item, itemIndex) => itemIndex === index ? { ...item, offset: event.target.value } : item) })} /><button className="dangerButton" onClick={() => update({ parts: parts.filter((_, itemIndex) => itemIndex !== index) })}>×</button></div>)}<button onClick={() => update({ parts: [...parts, { input: artifacts.at(-1) ?? "", offset: "0x0" }] })}>+ {t("Add part")}</button></div></>;
+  return <><label>{t("Output artifact")}<input value={String(step.output ?? "")} onChange={(event) => update({ output: event.target.value })} /></label><div className="mergeParts"><b>{t("Merge parts")}</b>{parts.map((part, index) => <div key={index}><select value={part.input} onChange={(event) => update({ parts: parts.map((item, itemIndex) => itemIndex === index ? { ...item, input: event.target.value } : item) })}><option value="">{t("Select artifact")}</option>{artifacts.map((name) => <option key={name}>{name}</option>)}</select><input value={String(part.offset)} onChange={(event) => update({ parts: parts.map((item, itemIndex) => itemIndex === index ? { ...item, offset: event.target.value } : item) })} /><button className="dangerButton iconButton" aria-label={t("Remove")} title={t("Remove")} onClick={() => update({ parts: parts.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} aria-hidden="true" /></button></div>)}<button onClick={() => update({ parts: [...parts, { input: artifacts.at(-1) ?? "", offset: "0x0" }] })}><Plus size={15} aria-hidden="true" />{t("Add part")}</button></div></>;
 }

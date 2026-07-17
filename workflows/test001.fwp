@@ -7,7 +7,7 @@
       "kind": "input",
       "id": "input_1",
       "name": "input_1",
-      "path": "C:\\Users\\zen82746.LI\\Desktop\\fpw\\fpw\\fpw-web-output\\input.bin"
+      "path": "input.bin"
     },
     {
       "kind": "fill",
@@ -31,7 +31,7 @@
       "id": "output_1",
       "input": "inserted_4",
       "name": "output_1",
-      "path": "C:\\Users\\zen82746.LI\\Desktop\\fpw\\fpw\\fpw-web-output\\output_1.bin"
+      "path": "out/output_1.bin"
     }
   ]
 }
