@@ -4,7 +4,7 @@
 
 FPW 是一个本地优先的固件打包工作流工具，用于可重复地处理原始二进制固件镜像。
 
-当前版本：**v0.0.2**
+当前版本：**v0.0.3**
 
 Release 下载：[FPW 发布包](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek4db3pgi3)
 
@@ -15,7 +15,7 @@ Release 下载：[FPW 发布包](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek
 
 ## 主要功能
 
-- 按数组顺序执行 `input`、`output`、`fill`、`insert`、`merge`、`crc32` 和 `sha256` 步骤。
+- 按数组顺序执行 `input`、`output`、`fill`、`delete`、`insert`、`merge`、`crc32` 和 `sha256` 步骤。
 - 生成 JSON/TXT 执行报告，记录命令、耗时、步骤状态和文件哈希。
 - WebUI 提供五阶段创建向导和工作流文件库。
 - 支持创建、打开、保存、复制、归档和导入工作流。
@@ -72,7 +72,7 @@ cargo build --release -p fpw-cli
 .\scripts\package-release.ps1
 ```
 
-脚本自动读取项目版本、构建 WebUI 和 Release CLI，并生成 `release\FPW-v0.0.2.zip`。使用 `-SkipBuild` 可以基于已有的 `target\release\fpw.exe` 和 `web\dist` 快速重新打包。
+脚本自动读取项目版本、构建 WebUI 和 Release CLI，并生成 `release\FPW-v0.0.3.zip`。使用 `-SkipBuild` 可以基于已有的 `target\release\fpw.exe` 和 `web\dist` 快速重新打包。
 
 ## CLI 命令
 

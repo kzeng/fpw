@@ -28,6 +28,7 @@ pub enum WorkflowStep {
     Input(InputStep),
     Output(OutputStep),
     Fill(FillStep),
+    Delete(DeleteStep),
     Insert(InsertStep),
     Merge(MergeStep),
     Crc32(Crc32Step),
@@ -40,6 +41,7 @@ impl WorkflowStep {
             Self::Input(step) => &step.id,
             Self::Output(step) => &step.id,
             Self::Fill(step) => &step.id,
+            Self::Delete(step) => &step.id,
             Self::Insert(step) => &step.id,
             Self::Merge(step) => &step.id,
             Self::Crc32(step) => &step.id,
@@ -52,6 +54,7 @@ impl WorkflowStep {
             Self::Input(step) => Some(&step.name),
             Self::Output(_) => None,
             Self::Fill(step) => Some(&step.output),
+            Self::Delete(step) => Some(&step.output),
             Self::Insert(step) => Some(&step.output),
             Self::Merge(step) => Some(&step.output),
             Self::Crc32(step) => Some(&step.output),
@@ -143,6 +146,14 @@ pub enum Endian {
     #[default]
     Little,
     Big,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteStep {
+    pub id: String,
+    pub input: String,
+    pub output: String,
+    pub range: ByteRange,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

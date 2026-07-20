@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "name": "delete-range",
+  "description": "Erase a byte range to 0xFF without shifting later offsets.",
+  "steps": [
+    {
+      "id": "firmware_file",
+      "kind": "input",
+      "name": "firmware",
+      "path": "fixtures/app.bin"
+    },
+    {
+      "id": "delete_old_metadata",
+      "kind": "delete",
+      "input": "firmware",
+      "output": "cleaned",
+      "range": { "offset": "0x10", "length": 16 }
+    },
+    {
+      "id": "write_cleaned",
+      "kind": "output",
+      "input": "cleaned",
+      "name": "image",
+      "path": "out/deleted.bin"
+    }
+  ]
+}

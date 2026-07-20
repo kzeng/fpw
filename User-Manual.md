@@ -4,7 +4,7 @@
 
 This manual explains how to build FPW on Windows, use its CLI and WebUI, understand path and artifact rules, and create common binary-processing workflows.
 
-Documented release: **v0.0.2**
+Documented release: **v0.0.3**
 
 ## 1. Build and Start
 
@@ -178,7 +178,7 @@ $env:FPW_WORKFLOW_HOME='C:\fpw-workflows'
 
 1. Enter workflow metadata and its library filename.
 2. Define one or more named input files.
-3. Add ordered `fill`, `insert`, `merge`, `crc32`, or `sha256` processing steps.
+3. Add ordered `fill`, `delete`, `insert`, `merge`, `crc32`, or `sha256` processing steps.
 4. Define output artifact names and default paths.
 5. Validate, preview, review JSON when necessary, and save.
 
@@ -235,7 +235,28 @@ The generated command contains the managed workflow's absolute path, non-empty i
 
 The patch starts at offset `0x10`. Existing bytes are overwritten. A write beyond EOF extends the result, and any gap is filled with `0xFF`.
 
-## 7. Merge Example
+## 7. Delete Example
+
+`delete` changes existing bytes in a range to `0xFF` without shifting later offsets or changing the image length.
+
+```json
+{
+  "id": "delete_old_metadata",
+  "kind": "delete",
+  "input": "firmware",
+  "output": "cleaned",
+  "range": { "offset": "0x10", "length": 16 }
+}
+```
+
+```powershell
+.\target\release\fpw.exe preview examples\delete-range.fwp
+.\target\release\fpw.exe run examples\delete-range.fwp
+```
+
+The range uses half-open semantics: `[offset, offset + length)`. Bytes beyond EOF are ignored, so `delete` never extends or shrinks a BIN image.
+
+## 8. Merge Example
 
 `merge` places multiple artifacts at explicit offsets in a new image.
 
@@ -267,7 +288,7 @@ The patch starts at offset `0x10`. Existing bytes are overwritten. A write beyon
 
 Gaps are filled with `0xFF`. If the actual byte ranges of any two parts overlap, execution fails instead of overwriting data.
 
-## 8. Fill, CRC32, and SHA256 Example
+## 9. Fill, CRC32, and SHA256 Example
 
 `examples/fill-crc-sha.fwp` demonstrates a complete processing chain:
 
@@ -297,7 +318,7 @@ Gaps are filled with `0xFF`. If the actual byte ranges of any two parts overlap,
 
 `range` selects bytes in the current input artifact. `writeOffset` is also relative to that input artifact. Endianness controls the order of the four CRC bytes. The operation creates a new output artifact and does not mutate the earlier artifact.
 
-## 9. Reports and Troubleshooting
+## 10. Reports and Troubleshooting
 
 By default, each run writes JSON and TXT reports under `fpw-reports/`.
 

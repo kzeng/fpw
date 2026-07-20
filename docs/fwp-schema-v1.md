@@ -95,6 +95,28 @@ Semantics:
 - If the range extends past EOF, the buffer is extended.
 - Holes are filled with `0xFF`.
 
+### delete
+
+Sets an existing byte range to the erased value `0xFF` without shifting later offsets.
+
+```json
+{
+  "id": "delete_old_metadata",
+  "kind": "delete",
+  "input": "firmware",
+  "output": "cleaned",
+  "range": { "offset": "0x100", "length": 16 }
+}
+```
+
+Semantics:
+
+- The range is half-open: `[offset, offset + length)`.
+- Existing bytes in the range become `0xFF`.
+- The output length is always the same as the input length.
+- A range extending beyond EOF affects only existing bytes and does not extend the image.
+- A range starting at or beyond EOF is a successful no-op.
+
 ### insert
 
 Overwrites bytes from one artifact into another at an offset.

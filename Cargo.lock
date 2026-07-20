@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "fpw-cli"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "clap",
  "fpw-core",
@@ -164,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "fpw-core"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "crc32fast",
  "serde",

@@ -11,7 +11,7 @@ import {
 } from "../workflow";
 import { useI18n } from "../i18n";
 
-const processingKinds: Array<Exclude<StepKind, "input" | "output">> = ["fill", "insert", "merge", "crc32", "sha256"];
+const processingKinds: Array<Exclude<StepKind, "input" | "output">> = ["fill", "delete", "insert", "merge", "crc32", "sha256"];
 
 type Props = {
   initialWorkflow: Workflow;
@@ -207,6 +207,7 @@ function StepEditor({ step, index, allSteps, update, remove, move }: {
         {step.kind === "input" ? <>{field("Input name", "name")}{field("Default file path", "path", "firmware.bin")}</> : null}
         {step.kind === "output" ? <>{select("Source artifact", "input")}{field("Output name", "name")}{field("Default output path", "path", "out/image.bin")}</> : null}
         {step.kind === "fill" ? <>{select("Input artifact", "input")}{field("Output artifact", "output")}{field("Offset", "offset", "0x100")}{field("Length", "length", "16")}{field("Fill value", "value", "0xFF")}</> : null}
+        {step.kind === "delete" ? <>{select("Input artifact", "input")}{field("Output artifact", "output")}<RangeFields step={step} update={update} /><p className="stepHint">{t("Deleted bytes become 0xFF; image length and later offsets do not change.")}</p></> : null}
         {step.kind === "insert" ? <>{select("Base artifact", "base")}{select("Inserted artifact", "insert")}{field("Output artifact", "output")}{field("Write offset", "offset", "0x200")}</> : null}
         {step.kind === "crc32" ? <>{select("Input artifact", "input")}{field("Output artifact", "output")}<RangeFields step={step} update={update} />{field("CRC write offset", "writeOffset", "0xFFC")}<label>{t("Endian")}<select value={String(step.endian ?? "little")} onChange={(event) => update({ endian: event.target.value })}><option value="little">little</option><option value="big">big</option></select></label></> : null}
         {step.kind === "sha256" ? <>{select("Input artifact", "input")}{field("Digest artifact", "output")}<label className="checkLabel"><input type="checkbox" checked={Boolean(step.range)} onChange={(event) => update({ range: event.target.checked ? { offset: "0x0", length: 16 } : undefined })} />{t("Hash only a byte range")}</label>{step.range ? <RangeFields step={step} update={update} /> : null}</> : null}

@@ -50,6 +50,12 @@ pub fn validate_workflow(workflow: &Workflow) -> Result<()> {
                 validate_byte(fill.value.parse_u64()?, &fill.id, "value")?;
                 artifacts.insert(fill.output.clone());
             }
+            WorkflowStep::Delete(delete) => {
+                require_artifact(&artifacts, &delete.input, &delete.id)?;
+                delete.range.offset.parse_usize()?;
+                delete.range.length.parse_usize()?;
+                artifacts.insert(delete.output.clone());
+            }
             WorkflowStep::Insert(insert) => {
                 require_artifact(&artifacts, &insert.base, &insert.id)?;
                 require_artifact(&artifacts, &insert.insert, &insert.id)?;

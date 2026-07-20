@@ -1,4 +1,4 @@
-export type StepKind = "input" | "output" | "fill" | "insert" | "merge" | "crc32" | "sha256";
+export type StepKind = "input" | "output" | "fill" | "delete" | "insert" | "merge" | "crc32" | "sha256";
 
 export type WorkflowStep = {
   id: string;
@@ -58,6 +58,8 @@ export function newProcessingStep(kind: Exclude<StepKind, "input" | "output">, i
   switch (kind) {
     case "fill":
       return { id: `fill_${suffix}`, kind, input, output: `filled_${suffix}`, offset: "0x0", length: 16, value: "0xFF" };
+    case "delete":
+      return { id: `delete_${suffix}`, kind, input, output: `deleted_${suffix}`, range: { offset: "0x0", length: 16 } };
     case "insert":
       return { id: `insert_${suffix}`, kind, base: input, insert: input, output: `inserted_${suffix}`, offset: "0x0" };
     case "merge":

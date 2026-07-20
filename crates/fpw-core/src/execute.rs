@@ -29,6 +29,10 @@ pub fn preview_workflow(workflow: &Workflow) -> Result<Vec<String>> {
             WorkflowStep::Input(step) => format!("input {} <- {:?}", step.name, step.path),
             WorkflowStep::Output(step) => format!("output {} -> {:?}", step.name, step.path),
             WorkflowStep::Fill(step) => format!("fill {} -> {}", step.input, step.output),
+            WorkflowStep::Delete(step) => format!(
+                "delete range from {} -> {} (preserve length)",
+                step.input, step.output
+            ),
             WorkflowStep::Insert(step) => format!(
                 "insert {} into {} -> {}",
                 step.insert, step.base, step.output
@@ -169,6 +173,18 @@ fn execute_step(
             write_extending(&mut bytes, offset, &vec![value as u8; length]);
             artifacts.insert(step.output.clone(), bytes);
         }
+        WorkflowStep::Delete(step) => {
+            let mut bytes = artifact(artifacts, &step.input)?.clone();
+            let offset = step.range.offset.parse_usize()?;
+            let length = step.range.length.parse_usize()?;
+            let end = offset
+                .checked_add(length)
+                .ok_or_else(|| FpwError::Message(format!("{} range overflow", step.id)))?;
+            let clamped_start = offset.min(bytes.len());
+            let clamped_end = end.min(bytes.len());
+            bytes[clamped_start..clamped_end].fill(0xFF);
+            artifacts.insert(step.output.clone(), bytes);
+        }
         WorkflowStep::Insert(step) => {
             let mut base = artifact(artifacts, &step.base)?.clone();
             let insert = artifact(artifacts, &step.insert)?.clone();
@@ -301,6 +317,7 @@ fn step_kind(step: &WorkflowStep) -> &'static str {
         WorkflowStep::Input(_) => "input",
         WorkflowStep::Output(_) => "output",
         WorkflowStep::Fill(_) => "fill",
+        WorkflowStep::Delete(_) => "delete",
         WorkflowStep::Insert(_) => "insert",
         WorkflowStep::Merge(_) => "merge",
         WorkflowStep::Crc32(_) => "crc32",
@@ -312,8 +329,8 @@ fn step_kind(step: &WorkflowStep) -> &'static str {
 mod tests {
     use super::*;
     use crate::model::{
-        ByteRange, Crc32Step, FillStep, InputStep, InsertStep, MergePart, MergeStep, NumberValue,
-        OutputStep, Sha256Step,
+        ByteRange, Crc32Step, DeleteStep, FillStep, InputStep, InsertStep, MergePart, MergeStep,
+        NumberValue, OutputStep, Sha256Step,
     };
 
     fn test_root(name: &str) -> PathBuf {
@@ -361,9 +378,18 @@ mod tests {
                     length: number(3),
                     value: number(0x11),
                 }),
+                WorkflowStep::Delete(DeleteStep {
+                    id: "delete".to_string(),
+                    input: "filled".to_string(),
+                    output: "deleted".to_string(),
+                    range: ByteRange {
+                        offset: number(3),
+                        length: number(3),
+                    },
+                }),
                 WorkflowStep::Insert(InsertStep {
                     id: "insert".to_string(),
-                    base: "filled".to_string(),
+                    base: "deleted".to_string(),
                     insert: "patch".to_string(),
                     output: "patched".to_string(),
                     offset: number(6),
@@ -405,11 +431,58 @@ mod tests {
 
         assert_eq!(report.status, ReportStatus::Success);
         let image = fs::read(root.join("out/image.bin")).unwrap();
-        assert_eq!(&image[..8], &[0, 0, 0x11, 0x11, 0x11, 0, 0xAA, 0xBB]);
+        assert_eq!(&image[..8], &[0, 0, 0x11, 0xFF, 0xFF, 0xFF, 0xAA, 0xBB]);
         assert_eq!(image.len(), 12);
         assert_eq!(
             fs::read(root.join("out/image.sha256.bin")).unwrap().len(),
             32
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn delete_preserves_length_and_ignores_range_past_end() {
+        let root = test_root("delete-range");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("input.bin"), [0x10, 0x20, 0x30, 0x40]).unwrap();
+
+        let workflow = Workflow {
+            schema_version: 1,
+            name: "delete-range".to_string(),
+            description: None,
+            steps: vec![
+                WorkflowStep::Input(InputStep {
+                    id: "input".to_string(),
+                    name: "firmware".to_string(),
+                    path: Some("input.bin".to_string()),
+                }),
+                WorkflowStep::Delete(DeleteStep {
+                    id: "delete".to_string(),
+                    input: "firmware".to_string(),
+                    output: "deleted".to_string(),
+                    range: ByteRange {
+                        offset: number(2),
+                        length: number(8),
+                    },
+                }),
+                WorkflowStep::Output(OutputStep {
+                    id: "output".to_string(),
+                    input: "deleted".to_string(),
+                    name: "image".to_string(),
+                    path: Some("out.bin".to_string()),
+                }),
+            ],
+        };
+        let workflow_path = write_workflow(&root, &workflow);
+
+        let report = run_workflow(&workflow_path, &workflow, &RunOptions::default()).unwrap();
+
+        assert_eq!(report.status, ReportStatus::Success);
+        assert_eq!(
+            fs::read(root.join("out.bin")).unwrap(),
+            [0x10, 0x20, 0xFF, 0xFF]
         );
 
         fs::remove_dir_all(root).unwrap();

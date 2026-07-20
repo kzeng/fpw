@@ -4,7 +4,7 @@
 
 FPW is a local-first firmware packaging workflow tool for repeatable raw binary image processing.
 
-Current version: **v0.0.2**
+Current version: **v0.0.3**
 
 Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek4db3pgi3)
 
@@ -15,7 +15,7 @@ Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27ne
 
 ## Features
 
-- Ordered raw `.bin` processing with `input`, `output`, `fill`, `insert`, `merge`, `crc32`, and `sha256` steps.
+- Ordered raw `.bin` processing with `input`, `output`, `fill`, `delete`, `insert`, `merge`, `crc32`, and `sha256` steps.
 - JSON and TXT execution reports containing the command, timing, step status, and file hashes.
 - Five-stage WebUI authoring wizard and a managed workflow library.
 - Create, open, save, duplicate, archive, and import workflow operations.

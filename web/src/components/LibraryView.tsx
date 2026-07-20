@@ -57,7 +57,7 @@ export function LibraryView(props: Props) {
         <div className="libraryEmpty">
           <div className="emptyGlyph">.fwp</div>
           <h3>{t("Your workflow library is empty")}</h3>
-          <p>{t("Create your first workflow with the guided authoring flow, or import an existing .fwp / .ffc file.")}</p>
+          <p>{t("Create your first workflow with the guided authoring flow, or import an existing .fwp file.")}</p>
           <button className="primaryButton" onClick={props.onNew}><FilePlus2 size={16} aria-hidden="true" />{t("Start authoring")}</button>
         </div>
       ) : (
