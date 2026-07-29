@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-dsp-inject",
+  "description": "Inject a GungnirS DSP binary into an MCU Intel HEX image using the legacy P1/P2 flash layout.",
+  "steps": [
+    {
+      "id": "read_mcu_image",
+      "kind": "image-input",
+      "name": "mcu_hex",
+      "path": "out/postbuild-mcu.hex"
+    },
+    {
+      "id": "read_dsp",
+      "kind": "input",
+      "name": "dsp"
+    },
+    {
+      "id": "inject_dsp",
+      "kind": "image-insert-binary",
+      "base": "mcu_hex",
+      "input": "dsp",
+      "output": "mcu_with_dsp",
+      "maxLength": "0x93000",
+      "parts": [
+        {
+          "sourceOffset": "0x0",
+          "address": "0x08080000",
+          "length": "0x80000"
+        },
+        {
+          "sourceOffset": "0x80000",
+          "address": "0x08180000",
+          "length": "0x13000"
+        }
+      ]
+    },
+    {
+      "id": "write_dsp_hex",
+      "kind": "image-output",
+      "input": "mcu_with_dsp",
+      "name": "jlink_dsp_hex",
+      "path": "out/postbuild-mcu-dsp.hex"
+    },
+    {
+      "id": "make_dsp_bin",
+      "kind": "image-to-binary",
+      "input": "mcu_with_dsp",
+      "output": "jlink_dsp_bin",
+      "address": "0x08000000",
+      "length": "0x200000",
+      "fill": "0xFF"
+    },
+    {
+      "id": "write_dsp_bin",
+      "kind": "output",
+      "input": "jlink_dsp_bin",
+      "name": "jlink_dsp_bin",
+      "path": "out/postbuild-mcu-dsp.bin"
+    }
+  ]
+}

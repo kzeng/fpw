@@ -1,6 +1,8 @@
 pub mod execute;
 pub mod ffc;
+pub mod image;
 pub mod model;
+pub mod nvr;
 pub mod recent;
 pub mod report;
 pub mod validate;

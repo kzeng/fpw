@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-nvr",
+  "description": "Generate a Page 254 NVR block from the Postbuild XLSM workbook.",
+  "steps": [
+    {
+      "id": "generate_nvr_254_8_9",
+      "kind": "nvr-generate",
+      "output": "nvr_254_8_9",
+      "workbook": "../Postbuild/default_nvr/22339878-001_000_DR8_1600T_SIAN3_NVR_cfg_v0.9_sipho_default.xlsm",
+      "page": 254,
+      "bankStart": 8,
+      "bankEnd": 9,
+      "registerStart": 128,
+      "registerEnd": 255,
+      "baseAddress": "0x08002000",
+      "versionSheet": "Cover",
+      "versionCell": "E3",
+      "ignoreMaskRule": false,
+      "alternateBase": true,
+      "sheets": [
+        {
+          "name": "8_254_Low",
+          "bank": 8,
+          "rowStart": 4,
+          "rowEnd": 230,
+          "dataColumn": 7
+        },
+        {
+          "name": "9_254_Pg00",
+          "bank": 9,
+          "rowStart": 3,
+          "rowEnd": 140,
+          "dataColumn": 7
+        }
+      ]
+    },
+    {
+      "id": "write_nvr",
+      "kind": "output",
+      "input": "nvr_254_8_9",
+      "name": "nvr_bin",
+      "path": "out/nvr_p254_b008_b009.bin"
+    },
+    {
+      "id": "generate_nvr_254_10_11",
+      "kind": "nvr-generate",
+      "output": "nvr_254_10_11",
+      "workbook": "../Postbuild/default_nvr/22339878-001_000_DR8_1600T_SIAN3_NVR_cfg_v0.9_sipho_default.xlsm",
+      "page": 254,
+      "bankStart": 10,
+      "bankEnd": 11,
+      "registerStart": 128,
+      "registerEnd": 255,
+      "baseAddress": "0x08002000",
+      "ignoreMaskRule": false,
+      "alternateBase": false,
+      "sheets": [
+        { "name": "10_254_Pg01", "bank": 10, "rowStart": 3, "rowEnd": 207, "dataColumn": 7 },
+        { "name": "11_254_Pg02", "bank": 11, "rowStart": 3, "rowEnd": 130, "dataColumn": 7 }
+      ]
+    },
+    {
+      "id": "write_nvr_10_11",
+      "kind": "output",
+      "input": "nvr_254_10_11",
+      "name": "nvr_bin_10_11",
+      "path": "out/nvr_p254_b010_b011.bin"
+    },
+    {
+      "id": "generate_nvr_254_24_25",
+      "kind": "nvr-generate",
+      "output": "nvr_254_24_25",
+      "workbook": "../Postbuild/default_nvr/22339878-001_000_DR8_1600T_SIAN3_NVR_cfg_v0.9_sipho_default.xlsm",
+      "page": 254,
+      "bankStart": 24,
+      "bankEnd": 25,
+      "registerStart": 128,
+      "registerEnd": 255,
+      "baseAddress": "0x08002000",
+      "ignoreMaskRule": false,
+      "alternateBase": false,
+      "sheets": [
+        { "name": "24_254_Pg10h", "bank": 24, "rowStart": 3, "rowEnd": 478, "dataColumn": 7 },
+        { "name": "25_254_Pg11h", "bank": 25, "rowStart": 3, "rowEnd": 346, "dataColumn": 7 }
+      ]
+    },
+    {
+      "id": "write_nvr_24_25",
+      "kind": "output",
+      "input": "nvr_254_24_25",
+      "name": "nvr_bin_24_25",
+      "path": "out/nvr_p254_b024_b025.bin"
+    },
+    {
+      "id": "generate_nvr_254_27_28",
+      "kind": "nvr-generate",
+      "output": "nvr_254_27_28",
+      "workbook": "../Postbuild/default_nvr/22339878-001_000_DR8_1600T_SIAN3_NVR_cfg_v0.9_sipho_default.xlsm",
+      "page": 254,
+      "bankStart": 27,
+      "bankEnd": 28,
+      "registerStart": 128,
+      "registerEnd": 255,
+      "baseAddress": "0x08002000",
+      "ignoreMaskRule": false,
+      "alternateBase": false,
+      "sheets": [
+        { "name": "27_254_Pg13h", "bank": 27, "rowStart": 3, "rowEnd": 435, "dataColumn": 7 },
+        { "name": "28_254_Pg14h", "bank": 28, "rowStart": 3, "rowEnd": 173, "dataColumn": 7 }
+      ]
+    },
+    {
+      "id": "write_nvr_27_28",
+      "kind": "output",
+      "input": "nvr_254_27_28",
+      "name": "nvr_bin_27_28",
+      "path": "out/nvr_p254_b027_b028.bin"
+    }
+  ]
+}

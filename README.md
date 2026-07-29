@@ -4,7 +4,7 @@
 
 FPW is a local-first firmware packaging workflow tool for repeatable raw binary image processing.
 
-Current version: **v0.0.3**
+Current version: **v1.0.3**
 
 Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek4db3pgi3)
 
@@ -16,6 +16,9 @@ Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27ne
 ## Features
 
 - Ordered raw `.bin` processing with `input`, `output`, `fill`, `delete`, `insert`, `merge`, `crc32`, and `sha256` steps.
+- Address-aware Intel HEX input, extraction, overlay, patching, HEX output, and explicit-range BIN conversion.
+- Visible Postbuild MCU/DSP templates and guided Image/Postbuild operation forms in the WebUI.
+- NVR XLSX/XLSM parsing, register patching, dual-bank image injection, and `imgAr.exe` `NVR-REG` archive append steps.
 - JSON and TXT execution reports containing the command, timing, step status, and file hashes.
 - Five-stage WebUI authoring wizard and a managed workflow library.
 - Create, open, save, duplicate, archive, and import workflow operations.
@@ -78,6 +81,16 @@ fpw web stop
 fpw web restart [--host 127.0.0.1] [--port 4769]
 fpw recent list
 fpw recent add <workflow.fwp>
+fpw image inspect <firmware.hex>
+fpw image to-bin <firmware.hex> <firmware.bin> --address <address> --length <length> [--fill <byte>]
+```
+
+Intel HEX inspection preserves absolute addresses and the start address. Binary conversion requires an explicit address range so sparse holes can be filled deterministically:
+
+```powershell
+.\target\release\fpw.exe image inspect .\firmware.hex
+.\target\release\fpw.exe image to-bin .\firmware.hex .\firmware.bin `
+  --address 0x08000000 --length 0x200000 --fill 0xFF
 ```
 
 Use repeated `--input` and `--output` options to override named paths:
@@ -90,6 +103,25 @@ Use repeated `--input` and `--output` options to override named paths:
 ```
 
 Paths declared inside a workflow are resolved relative to the `.fwp` file. CLI input/output override paths and the report directory are resolved from the current process directory when relative.
+
+Run the Postbuild MCU merge baseline:
+
+```powershell
+.\target\release\fpw.exe validate examples\postbuild-mcu-merge.fwp
+.\target\release\fpw.exe run examples\postbuild-mcu-merge.fwp `
+  --input gboot=C:\firmware\GungnirS_gboot.hex `
+  --input image_a=C:\firmware\GungnirS_imageA.hex `
+  --input image_b=C:\firmware\GungnirS_imageB.hex
+```
+
+Inject a DSP binary after creating the MCU HEX:
+
+```powershell
+.\target\release\fpw.exe run examples\postbuild-dsp-inject.fwp `
+  --input dsp=C:\firmware\dsp_vE000F200.bin
+```
+
+The DSP input is limited to `0x93000` bytes and is split across the legacy P1/P2 flash addresses.
 
 ## WebUI Workflow
 

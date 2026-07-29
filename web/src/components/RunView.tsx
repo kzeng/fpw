@@ -9,8 +9,8 @@ type Props = { selected: OpenWorkflow; onBack: () => void; onEdit: () => void };
 
 export function RunView({ selected, onBack, onEdit }: Props) {
   const { t } = useI18n();
-  const inputs = useMemo(() => selected.workflow.steps.filter((step) => step.kind === "input"), [selected]);
-  const outputs = useMemo(() => selected.workflow.steps.filter((step) => step.kind === "output"), [selected]);
+  const inputs = useMemo(() => selected.workflow.steps.filter((step) => step.kind === "input" || step.kind === "image-input"), [selected]);
+  const outputs = useMemo(() => selected.workflow.steps.filter((step) => step.kind === "output" || step.kind === "image-output"), [selected]);
   const [inputPaths, setInputPaths] = useState<Record<string, string>>(() => Object.fromEntries(inputs.map((step) => [String(step.name), ""])));
   const [outputPaths, setOutputPaths] = useState<Record<string, string>>(() => Object.fromEntries(outputs.map((step) => [String(step.name), ""])));
   const [reportDir, setReportDir] = useState("fpw-reports");

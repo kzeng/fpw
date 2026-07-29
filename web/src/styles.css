@@ -49,6 +49,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .servicePill { justify-self: end; display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid #587977; font: 600 11px Consolas, monospace; text-transform: uppercase; }
 .servicePill span { width: 8px; height: 8px; background: #a7b4b2; }
 .servicePill.online span { background: #58d19a; box-shadow: 0 0 10px #58d19a; }
+.versionBadge { padding: 6px 8px; border: 1px solid #52716e; color: #b9d8d3; background: #173533; font: 700 11px Consolas, monospace; }
 .topUtilities { justify-self: end; display: flex; align-items: center; gap: 10px; }
 .languageSwitch { display: flex; border: 1px solid #587977; }
 .languageSwitch button { min-width: 44px; min-height: 32px; padding: 0 9px; border: 0; color: #adc2bf; background: transparent; font: 700 11px Consolas, monospace; }
@@ -87,6 +88,32 @@ textarea { min-height: 90px; resize: vertical; }
 .libraryEmpty h3 { margin: 24px 0 4px; font: 600 24px Bahnschrift, sans-serif; }
 .libraryEmpty p { max-width: 520px; margin: 0 0 20px; color: var(--muted); }
 .workflowGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; }
+.templateShelf { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; padding: 16px; border: 1px solid #9db2ad; background: linear-gradient(115deg, #e7f0ed, #f9f6ed); }
+.templateIntro { grid-column: 1 / -1; padding: 5px 10px; }
+.templateIntro h3 { margin: 5px 0; font: 600 20px Bahnschrift, sans-serif; }
+.templateIntro p { margin: 0; color: var(--muted); font-size: 12px; }
+.templateCard { min-height: 92px; justify-content: flex-start; gap: 14px; padding: 15px; border-color: #87a39d; background: rgba(255,255,255,.82); text-align: left; }
+.templateCard svg { flex: 0 0 auto; color: var(--orange); }
+.templateCard span { display: grid; gap: 5px; }
+.templateCard b { color: var(--ink); font: 700 14px Bahnschrift, sans-serif; }
+.templateCard small { color: var(--muted); font: 11px/1.4 "Segoe UI", sans-serif; }
+.templateCard:hover { border-color: var(--teal); background: #fff; transform: translateY(-1px); }
+.addStepChoices { display: flex; flex-wrap: wrap; gap: 8px; }
+.imageAction, .imagePalette button { border-color: #4d7f78; color: #174a44; background: #e1efeb; }
+.nvrPalette button { border-color: #56866d; color: #18513c; background: linear-gradient(135deg, #e2f1e8, #fff6dc); }
+.nvrTemplateCard { border-color: #6f9c83; }
+.operationHelpButton { position: relative; }
+.operationHelpButton::before,
+.operationHelpButton::after { position: absolute; left: 50%; z-index: 30; pointer-events: none; opacity: 0; transform: translate(-50%, 5px); transition: opacity 140ms ease, transform 140ms ease; }
+.operationHelpButton::before { content: ""; bottom: calc(100% + 5px); border: 6px solid transparent; border-top-color: #173b36; }
+.operationHelpButton::after { content: attr(data-tooltip); bottom: calc(100% + 17px); width: min(360px, 75vw); padding: 11px 13px; border: 1px solid #2f625a; color: #f7fbf9; background: #173b36; box-shadow: 4px 5px 0 rgba(23, 59, 54, .18); font: 12px/1.55 "Segoe UI", sans-serif; text-align: left; white-space: normal; }
+.operationHelpButton:hover::before,
+.operationHelpButton:hover::after,
+.operationHelpButton:focus-visible::before,
+.operationHelpButton:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.paletteLabel { margin: 12px 0 7px; color: var(--muted); font: 700 10px Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.imagePaletteLabel { margin-top: 20px; color: var(--teal-dark); }
+.binaryImageParts > div { grid-template-columns: 1fr 1fr 1fr auto !important; }
 .workflowCard { position: relative; min-height: 240px; padding: 20px; border: 1px solid #b9c6c2; background: #f9fbf9; transition: transform 160ms ease, box-shadow 160ms ease; }
 .workflowCard::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--teal); }
 .workflowCard:hover { transform: translateY(-2px); box-shadow: 5px 6px 0 #c4cecb; }
@@ -134,6 +161,7 @@ textarea { min-height: 90px; resize: vertical; }
 .mergeParts { grid-column: 1 / -1; padding: 12px; border: 1px solid var(--line); background: #f5f8f6; }
 .mergeParts > b { display: block; margin-bottom: 8px; font-size: 11px; }
 .mergeParts > div { display: grid; grid-template-columns: 1fr 1fr 40px; gap: 7px; margin-bottom: 7px; }
+.nvrSheets > div { grid-template-columns: minmax(130px, 1.8fr) repeat(4, minmax(70px, .7fr)) 40px; }
 .reviewActions { display: flex; gap: 8px; margin: 20px 0; }
 .previewLines { list-style: none; display: grid; gap: 4px; margin: 14px 0; padding: 0; }
 .previewLines li { display: grid; grid-template-columns: 34px 1fr; padding: 9px; background: #edf2f0; font: 12px Consolas, monospace; }
@@ -213,6 +241,8 @@ textarea { min-height: 90px; resize: vertical; }
   .importPanel button { justify-self: start; }
   .runSection { min-height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .stepFields { grid-template-columns: repeat(2, 1fr); }
+  .templateShelf { grid-template-columns: 1fr 1fr; }
+  .templateIntro { grid-column: 1 / -1; }
 }
 
 @media (max-width: 760px) {
@@ -231,6 +261,8 @@ textarea { min-height: 90px; resize: vertical; }
   .runLayout { grid-template-columns: 1fr; }
   .reviewActions, .runCommandBar { flex-wrap: wrap; }
   .workflowGrid { grid-template-columns: 1fr; }
+  .templateShelf { grid-template-columns: 1fr; }
+  .templateIntro { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

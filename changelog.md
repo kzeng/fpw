@@ -2,6 +2,26 @@
 
 FPW 的重要版本变更记录在此文件中。
 
+## v1.0.3 - 2026-07-29
+
+### Added
+
+- 新增 Intel HEX 稀疏镜像模型、格式校验、检查和指定地址范围 BIN 转换。
+- 新增 `image-input`、`image-output`、`image-extract`、`image-overlay`、`image-patch` 和 `image-to-binary` 工作流步骤。
+- 新增固件版本字符串提取与一致性断言。
+- 新增 DSP BIN P1/P2 分段注入和最大长度校验。
+- 新增 Postbuild MCU 合并与 DSP 注入示例工作流。
+- WebUI 新增 Postbuild MCU/DSP 模板卡片、Intel HEX 输入输出按钮和 Image/Postbuild 高级步骤表单。
+- 新增 `nvr-generate`、`nvr-inject-image`、`nvr-append-archive`，覆盖 NVR XLSM 解析、双 Bank 注入和 `imgAr.exe NVR-REG` 打包。
+- WebUI 新增 NVR 模板、NVR 操作面板及中英文字段说明。
+
+### Changed
+
+- 执行引擎区分 Binary、Sparse Image 和 Text artifact，现有 BIN 工作流语义保持不变。
+- WebUI Run 页面支持高级镜像工作流的输入输出路径覆盖。
+- WebUI 顶部显示正在运行的 FPW Core 版本，便于确认当前服务版本。
+- 项目版本升级为 `v1.0.3`。
+
 ## v0.0.3 - 2026-07-20
 
 ### Added

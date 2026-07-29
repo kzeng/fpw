@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Copy, FilePlus2, FolderOpen, Pencil, Play, RefreshCw, Trash2, Upload } from "lucide-react";
-import type { WorkflowSummary } from "../workflow";
+import { Binary, Copy, Cpu, Database, FilePlus2, FolderOpen, Pencil, Play, RefreshCw, Trash2, Upload } from "lucide-react";
+import type { PostbuildTemplate, WorkflowSummary } from "../workflow";
 import { useI18n } from "../i18n";
 
 type Props = {
@@ -9,6 +9,7 @@ type Props = {
   busy: boolean;
   error: string;
   onNew: () => void;
+  onTemplate: (template: PostbuildTemplate) => void;
   onEdit: (path: string) => void;
   onRun: (path: string) => void;
   onRefresh: () => void;
@@ -40,6 +41,13 @@ export function LibraryView(props: Props) {
 
       <div className="libraryRoot"><FolderOpen size={16} aria-hidden="true" /><span>{t("Managed directory")}</span><code>{props.root || "workflows"}</code></div>
       {props.error ? <div className="inlineError">{props.error}</div> : null}
+
+      <section className="templateShelf">
+        <div className="templateIntro"><span className="eyebrow">{t("Postbuild templates")}</span></div>
+        <button className="templateCard" onClick={() => props.onTemplate("mcu")}><Cpu size={22} aria-hidden="true" /><span><b>{t("MCU image package")}</b><small>{t("Merge Gboot, Image A, and Image B; validate versions; export HEX and BIN.")}</small></span></button>
+        <button className="templateCard" onClick={() => props.onTemplate("dsp")}><Binary size={22} aria-hidden="true" /><span><b>{t("DSP injection")}</b><small>{t("Insert DSP P1/P2 into an MCU image with the legacy address layout.")}</small></span></button>
+        <button className="templateCard nvrTemplateCard" onClick={() => props.onTemplate("nvr")}><Database size={22} aria-hidden="true" /><span><b>{t("NVR package")}</b><small>{t("Generate NVR register blocks from XLSM, inject images, or append NVR-REG archives.")}</small></span></button>
+      </section>
 
       {importOpen ? (
         <form className="importPanel" onSubmit={(event) => {

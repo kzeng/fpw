@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-nvr",
+  "description": "Generate NVR register data from XLSM and write it as a binary block.",
+  "steps": [
+    {
+      "kind": "nvr-generate",
+      "id": "generate_nvr",
+      "output": "nvr_block",
+      "workbook": "default_nvr/config.xlsm",
+      "page": 254,
+      "bankStart": 0,
+      "bankEnd": 0,
+      "registerStart": 128,
+      "registerEnd": 255,
+      "baseAddress": "0x08002000",
+      "sheets": [
+        {
+          "name": "0_254",
+          "bank": 0,
+          "rowStart": 3,
+          "rowEnd": 146,
+          "dataColumn": 7
+        }
+      ],
+      "versionSheet": "Cover",
+      "versionCell": "E3",
+      "ignoreMaskRule": false,
+      "alternateBase": false
+    },
+    {
+      "kind": "output",
+      "id": "write_nvr",
+      "input": "nvr_block",
+      "name": "nvr_bin",
+      "path": "out/nvr.bin"
+    }
+  ]
+}

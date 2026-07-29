@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use fpw_core::{
-    model::parse_named_values, preview_workflow, report::ReportStatus, run_workflow,
-    validate_workflow, RunOptions, Workflow,
+    image::SparseImage, model::parse_named_values, preview_workflow, report::ReportStatus,
+    run_workflow, validate_workflow, RunOptions, Workflow,
 };
 use std::{
     fs,
@@ -59,12 +59,33 @@ enum Command {
         #[command(subcommand)]
         command: RecentCommand,
     },
+    Image {
+        #[command(subcommand)]
+        command: ImageCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
 enum RecentCommand {
     List,
     Add { workflow: PathBuf },
+}
+
+#[derive(Debug, Subcommand)]
+enum ImageCommand {
+    Inspect {
+        input: PathBuf,
+    },
+    ToBin {
+        input: PathBuf,
+        output: PathBuf,
+        #[arg(long, value_parser = parse_u32)]
+        address: u32,
+        #[arg(long, value_parser = parse_usize)]
+        length: usize,
+        #[arg(long, default_value = "0xFF", value_parser = parse_u8)]
+        fill: u8,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -193,8 +214,96 @@ fn run() -> fpw_core::Result<()> {
                 println!("{}", serde_json::to_string_pretty(&recent)?);
             }
         },
+        Command::Image { command } => match command {
+            ImageCommand::Inspect { input } => {
+                let image = read_intel_hex(&input)?;
+                println!("format: intel-hex");
+                println!("data-bytes: {}", image.data_len());
+                println!(
+                    "address-range: {}",
+                    match (image.min_address(), image.max_address()) {
+                        (Some(start), Some(end)) => {
+                            format!("0x{start:08X}..0x{:08X}", end.saturating_add(1))
+                        }
+                        _ => "empty".to_string(),
+                    }
+                );
+                println!(
+                    "start-address: {}",
+                    image
+                        .start_address()
+                        .map(|address| format!("0x{address:08X}"))
+                        .unwrap_or_else(|| "none".to_string())
+                );
+                for (index, segment) in image.segments().iter().enumerate() {
+                    println!(
+                        "segment[{index}]: 0x{:08X}..0x{:08X} ({} bytes)",
+                        segment.address,
+                        segment.address + segment.data.len() as u32,
+                        segment.data.len()
+                    );
+                }
+            }
+            ImageCommand::ToBin {
+                input,
+                output,
+                address,
+                length,
+                fill,
+            } => {
+                let image = read_intel_hex(&input)?;
+                let bytes = image.to_binary(address, length, fill)?;
+                if let Some(parent) = output
+                    .parent()
+                    .filter(|parent| !parent.as_os_str().is_empty())
+                {
+                    fs::create_dir_all(parent)?;
+                }
+                fs::write(&output, bytes)?;
+                println!(
+                    "created: {} (address 0x{address:08X}, length 0x{length:X}, fill 0x{fill:02X})",
+                    output.display()
+                );
+            }
+        },
     }
     Ok(())
+}
+
+fn read_intel_hex(path: &PathBuf) -> fpw_core::Result<SparseImage> {
+    let source = fs::read_to_string(path)?;
+    SparseImage::from_intel_hex(&source)
+}
+
+fn parse_u32(value: &str) -> Result<u32, String> {
+    parse_unsigned(value)
+        .and_then(|number| u32::try_from(number).map_err(|_| format!("value exceeds u32: {value}")))
+}
+
+fn parse_usize(value: &str) -> Result<usize, String> {
+    parse_unsigned(value).and_then(|number| {
+        usize::try_from(number).map_err(|_| format!("value exceeds usize: {value}"))
+    })
+}
+
+fn parse_u8(value: &str) -> Result<u8, String> {
+    parse_unsigned(value).and_then(|number| {
+        u8::try_from(number).map_err(|_| format!("value is not a byte: {value}"))
+    })
+}
+
+fn parse_unsigned(value: &str) -> Result<u64, String> {
+    let trimmed = value.trim();
+    if let Some(hex) = trimmed
+        .strip_prefix("0x")
+        .or_else(|| trimmed.strip_prefix("0X"))
+    {
+        u64::from_str_radix(hex, 16).map_err(|_| format!("invalid number: {value}"))
+    } else {
+        trimmed
+            .parse::<u64>()
+            .map_err(|_| format!("invalid number: {value}"))
+    }
 }
 
 fn write_config(output: Option<PathBuf>) -> fpw_core::Result<()> {

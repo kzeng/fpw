@@ -1,6 +1,6 @@
 # FWP Schema v1
 
-`.fwp` files are JSON documents. Version 1 is intentionally small and focused on raw `.bin` workflows.
+`.fwp` files are JSON documents. Version 1 supports raw binary artifacts and address-aware Intel HEX image artifacts.
 
 ## Top-Level Shape
 
@@ -201,3 +201,239 @@ MVP behavior:
 
 - Produces a digest artifact.
 - Does not write the digest back to the input buffer.
+
+### image-input
+
+Reads an Intel HEX file as a sparse, absolute-address image.
+
+```json
+{
+  "id": "gboot",
+  "kind": "image-input",
+  "name": "gboot",
+  "path": "gboot.hex"
+}
+```
+
+The `name` can be overridden with the existing CLI `--input name=path` option.
+
+### image-extract
+
+Copies an absolute-address range from an image. Missing addresses remain absent rather than becoming padding.
+
+```json
+{
+  "id": "boot_bank_a",
+  "kind": "image-extract",
+  "input": "gboot",
+  "output": "boot_a",
+  "address": "0x08000000",
+  "length": "0x2000"
+}
+```
+
+### image-overlay
+
+Overlays one or more sparse images onto a base image without relocating their addresses.
+
+```json
+{
+  "id": "merge_images",
+  "kind": "image-overlay",
+  "base": "boot",
+  "overlays": ["image_a", "image_b"],
+  "output": "full_image",
+  "overlap": "error"
+}
+```
+
+`overlap` is `error` by default. Use `replace` only when later image data is intentionally allowed to overwrite existing addresses.
+
+### image-patch
+
+Writes hexadecimal bytes at an absolute address.
+
+```json
+{
+  "id": "select_image_a",
+  "kind": "image-patch",
+  "input": "full_image",
+  "output": "selected_image",
+  "address": "0x0810C000",
+  "data": "0000"
+}
+```
+
+### image-to-binary
+
+Flattens an explicit absolute-address range to a binary artifact.
+
+```json
+{
+  "id": "make_bin",
+  "kind": "image-to-binary",
+  "input": "selected_image",
+  "output": "firmware_bin",
+  "address": "0x08000000",
+  "length": "0x200000",
+  "fill": "0xFF"
+}
+```
+
+Sparse holes are filled with `fill`, which defaults to `0xFF`.
+
+### image-output
+
+Writes a sparse image as Intel HEX while preserving its start address.
+
+```json
+{
+  "id": "write_hex",
+  "kind": "image-output",
+  "input": "selected_image",
+  "name": "firmware_hex",
+  "path": "out/firmware.hex",
+  "recordSize": 16
+}
+```
+
+`recordSize` must be between 1 and 255. The output path can be overridden with `--output name=path`.
+
+### image-extract-string
+
+Reads an ASCII string from an absolute image address. The default `null-space` trim mode removes leading and trailing NUL and space characters.
+
+```json
+{
+  "id": "read_image_a_version",
+  "kind": "image-extract-string",
+  "input": "full_image",
+  "output": "image_a_version",
+  "address": "0x08010250",
+  "length": 7,
+  "trim": "null-space"
+}
+```
+
+### assert-equal
+
+Stops execution when two text artifacts differ.
+
+```json
+{
+  "id": "validate_versions",
+  "kind": "assert-equal",
+  "left": "image_a_version",
+  "right": "image_b_version",
+  "message": "Image A and Image B firmware versions differ"
+}
+```
+
+### image-insert-binary
+
+Splits a binary artifact into configured source ranges and inserts them at absolute image addresses.
+
+```json
+{
+  "id": "inject_dsp",
+  "kind": "image-insert-binary",
+  "base": "mcu_image",
+  "input": "dsp",
+  "output": "mcu_with_dsp",
+  "maxLength": "0x93000",
+  "parts": [
+    {
+      "sourceOffset": "0x0",
+      "address": "0x08080000",
+      "length": "0x80000"
+    },
+    {
+      "sourceOffset": "0x80000",
+      "address": "0x08180000",
+      "length": "0x13000"
+    }
+  ]
+}
+```
+
+If a part reaches the end of the input before its configured length, only the remaining bytes are inserted. Inputs larger than `maxLength` fail before the image is modified.
+
+### nvr-generate
+
+Reads NVR values from `.xlsx` or `.xlsm` and creates an artifact containing the bytes and `NVR-REG` metadata.
+
+```json
+{
+  "id": "generate_nvr",
+  "kind": "nvr-generate",
+  "output": "nvr_block",
+  "workbook": "default_nvr/config.xlsm",
+  "page": 254,
+  "bankStart": 8,
+  "bankEnd": 9,
+  "registerStart": 128,
+  "registerEnd": 255,
+  "baseAddress": "0x08002000",
+  "versionSheet": "Cover",
+  "versionCell": "E3",
+  "ignoreMaskRule": false,
+  "alternateBase": true,
+  "sheets": [
+    { "name": "8_254_Low", "bank": 8, "rowStart": 4, "rowEnd": 230, "dataColumn": 7 }
+  ]
+}
+```
+
+`dataColumn` is zero-based, so `7` is Excel column H. Rows with an empty register address in column A are skipped. Every mapped bank must yield exactly 128 bytes. An odd bank count is padded to a 256-byte archive boundary.
+
+### nvr-inject-image
+
+Writes the NVR block at its calculated Flash address. `mirrorOffset` is optional; `0x100000` mirrors it to Image B in the current Postbuild layout.
+
+```json
+{
+  "id": "inject_nvr",
+  "kind": "nvr-inject-image",
+  "image": "full_image",
+  "nvr": "nvr_block",
+  "output": "image_with_nvr",
+  "mirrorOffset": "0x100000"
+}
+```
+
+### nvr-patch-registers
+
+Creates a new NVR artifact with explicit register changes while retaining the original NVR header metadata.
+
+```json
+{
+  "id": "patch_aa_settings",
+  "kind": "nvr-patch-registers",
+  "input": "nvr_block",
+  "output": "aa_nvr_block",
+  "patches": [
+    { "bank": 1, "register": 144, "data": "00" },
+    { "bank": 1, "register": 147, "data": "0000" }
+  ]
+}
+```
+
+Patch ranges must remain inside the selected block's effective `dataLen`.
+
+### nvr-append-archive
+
+Copies an existing archive and invokes an imgAr-compatible executable with file type `NVR-REG`.
+
+```json
+{
+  "id": "append_nvr",
+  "kind": "nvr-append-archive",
+  "archive": "mcu_dsp_archive",
+  "nvr": "nvr_block",
+  "output": "mcu_dsp_nvr_archive",
+  "tool": "tools/imgAr.exe",
+  "encryption": "enc0"
+}
+```
+
+`encryption` must be `enc0` or `enc1`. A missing executable or non-zero exit status fails the workflow.

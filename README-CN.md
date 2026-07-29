@@ -4,7 +4,7 @@
 
 FPW 是一个本地优先的固件打包工作流工具，用于可重复地处理原始二进制固件镜像。
 
-当前版本：**v0.0.3**
+当前版本：**v1.0.3**
 
 Release 下载：[FPW 发布包](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek4db3pgi3)
 
@@ -16,6 +16,9 @@ Release 下载：[FPW 发布包](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek
 ## 主要功能
 
 - 按数组顺序执行 `input`、`output`、`fill`、`delete`、`insert`、`merge`、`crc32` 和 `sha256` 步骤。
+- 支持保留绝对地址的 Intel HEX 输入、提取、叠加、补丁、HEX 输出和指定范围 BIN 转换。
+- WebUI 提供可见的 Postbuild MCU/DSP 模板入口及 Image/Postbuild 操作表单。
+- 支持解析 NVR XLSX/XLSM、修改寄存器数据、注入双 Bank 镜像，并通过 `imgAr.exe` 追加 `NVR-REG` 升级条目。
 - 生成 JSON/TXT 执行报告，记录命令、耗时、步骤状态和文件哈希。
 - WebUI 提供五阶段创建向导和工作流文件库。
 - 支持创建、打开、保存、复制、归档和导入工作流。
@@ -72,7 +75,7 @@ cargo build --release -p fpw-cli
 .\scripts\package-release.ps1
 ```
 
-脚本自动读取项目版本、构建 WebUI 和 Release CLI，并生成 `release\FPW-v0.0.3.zip`。使用 `-SkipBuild` 可以基于已有的 `target\release\fpw.exe` 和 `web\dist` 快速重新打包。
+脚本自动读取项目版本、构建 WebUI 和 Release CLI，并生成 `release\FPW-v1.0.3.zip`。使用 `-SkipBuild` 可以基于已有的 `target\release\fpw.exe` 和 `web\dist` 快速重新打包。
 
 ## CLI 命令
 
@@ -86,6 +89,16 @@ fpw web stop
 fpw web restart [--host 127.0.0.1] [--port 4769]
 fpw recent list
 fpw recent add <workflow.fwp>
+fpw image inspect <firmware.hex>
+fpw image to-bin <firmware.hex> <firmware.bin> --address <address> --length <length> [--fill <byte>]
+```
+
+Intel HEX 检查会保留绝对地址和启动地址。转换 BIN 时必须明确指定地址范围，从而以确定的方式填充稀疏空洞：
+
+```powershell
+.\target\release\fpw.exe image inspect .\firmware.hex
+.\target\release\fpw.exe image to-bin .\firmware.hex .\firmware.bin `
+  --address 0x08000000 --length 0x200000 --fill 0xFF
 ```
 
 可以重复使用 `--input` 和 `--output` 覆盖工作流中同名的输入输出路径：
@@ -98,6 +111,25 @@ fpw recent add <workflow.fwp>
 ```
 
 工作流内部声明的相对路径以 `.fwp` 文件所在目录为基准。CLI 的输入输出覆盖路径以及报告目录，如果使用相对路径，则以当前进程目录为基准。
+
+运行 Postbuild MCU 合并基线工作流：
+
+```powershell
+.\target\release\fpw.exe validate examples\postbuild-mcu-merge.fwp
+.\target\release\fpw.exe run examples\postbuild-mcu-merge.fwp `
+  --input gboot=C:\firmware\GungnirS_gboot.hex `
+  --input image_a=C:\firmware\GungnirS_imageA.hex `
+  --input image_b=C:\firmware\GungnirS_imageB.hex
+```
+
+生成 MCU HEX 后注入 DSP BIN：
+
+```powershell
+.\target\release\fpw.exe run examples\postbuild-dsp-inject.fwp `
+  --input dsp=C:\firmware\dsp_vE000F200.bin
+```
+
+DSP 输入最大为 `0x93000` 字节，并按照旧 Postbuild 的 P1/P2 Flash 地址进行分段写入。
 
 ## WebUI 使用流程
 

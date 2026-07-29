@@ -370,7 +370,8 @@ fn api_response(method: &str, path: &str, body: &[u8]) -> Option<HttpResponse> {
     match (method, path) {
         ("GET", "/api/health") => Some(json_response(json!({
             "status": "ok",
-            "service": "fpw-web"
+            "service": "fpw-web",
+            "version": env!("CARGO_PKG_VERSION")
         }))),
         ("GET", "/api/recent-projects") => {
             Some(match fpw_core::recent::load_recent_projects(None) {

@@ -4,7 +4,7 @@
 
 This manual explains how to build FPW on Windows, use its CLI and WebUI, understand path and artifact rules, and create common binary-processing workflows.
 
-Documented release: **v0.0.3**
+Documented release: **v1.0.3**
 
 ## 1. Build and Start
 
@@ -342,3 +342,15 @@ npm run build
 ```
 
 See [docs/fwp-schema-v1.md](docs/fwp-schema-v1.md) for the field-level schema.
+
+## 11. NVR Example
+
+`examples/postbuild-nvr.fwp` reads the existing Postbuild XLSM workbook and generates the selected Page 254, Bank 8-9 register block:
+
+```powershell
+.\target\release\fpw.exe validate examples\postbuild-nvr.fwp
+.\target\release\fpw.exe preview examples\postbuild-nvr.fwp
+.\target\release\fpw.exe run examples\postbuild-nvr.fwp
+```
+
+The WebUI provides `nvr-generate`, `nvr-inject-image`, and `nvr-append-archive` under **NVR operations**. The workbook data column is zero-based: `7` means Excel column H. Rows whose column A register address is empty are skipped.

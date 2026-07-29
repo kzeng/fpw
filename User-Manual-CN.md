@@ -7,7 +7,7 @@ Output:
 
 本文介绍 FPW 在 Windows 下的构建方法、CLI/WebUI 使用方式、路径规则，以及常用二进制处理步骤的简单用例。
 
-本文档对应版本：**v0.0.3**
+本文档对应版本：**v1.0.3**
 
 ## 1. 构建与启动
 
@@ -66,8 +66,8 @@ target\release\fpw.exe
 脚本会从 `Cargo.toml` 读取版本号，构建 WebUI 和独立的 Release CLI，然后生成：
 
 ```text
-release\FPW-v0.0.3\
-release\FPW-v0.0.3.zip
+release\FPW-v1.0.3\
+release\FPW-v1.0.3.zip
 ```
 
 如果已经完成构建，可跳过重复构建：
@@ -433,3 +433,15 @@ npm run build
 ```
 
 字段级定义请参考 [docs/fwp-schema-v1.md](docs/fwp-schema-v1.md)。
+
+## 11. NVR 示例
+
+`examples/postbuild-nvr.fwp` 会读取现有 Postbuild XLSM，并生成 Page 254、Bank 8-9 的寄存器数据块：
+
+```powershell
+.\target\release\fpw.exe validate examples\postbuild-nvr.fwp
+.\target\release\fpw.exe preview examples\postbuild-nvr.fwp
+.\target\release\fpw.exe run examples\postbuild-nvr.fwp
+```
+
+WebUI 的 **NVR 操作**区域提供 `nvr-generate`、`nvr-inject-image` 和 `nvr-append-archive`。`dataColumn` 从 0 开始，因此 `7` 表示 Excel H 列；A 列寄存器地址为空的行会被跳过。

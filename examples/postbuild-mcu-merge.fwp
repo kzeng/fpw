@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-mcu-merge",
+  "description": "Build the GungnirS MCU-only J-Link HEX and 2 MiB BIN from gboot, Image A, and Image B.",
+  "steps": [
+    {
+      "id": "read_gboot",
+      "kind": "image-input",
+      "name": "gboot"
+    },
+    {
+      "id": "read_image_a",
+      "kind": "image-input",
+      "name": "image_a"
+    },
+    {
+      "id": "read_image_b",
+      "kind": "image-input",
+      "name": "image_b"
+    },
+    {
+      "id": "extract_gboot_bank_a",
+      "kind": "image-extract",
+      "input": "gboot",
+      "output": "gboot_bank_a",
+      "address": "0x08000000",
+      "length": "0x2000"
+    },
+    {
+      "id": "extract_gboot_bank_b",
+      "kind": "image-extract",
+      "input": "gboot",
+      "output": "gboot_bank_b",
+      "address": "0x08100000",
+      "length": "0x2000"
+    },
+    {
+      "id": "merge_gboot_banks",
+      "kind": "image-overlay",
+      "base": "gboot_bank_a",
+      "overlays": ["gboot_bank_b"],
+      "output": "gboot_banks"
+    },
+    {
+      "id": "merge_mcu_images",
+      "kind": "image-overlay",
+      "base": "gboot_banks",
+      "overlays": ["image_a", "image_b"],
+      "output": "full_mcu_image"
+    },
+    {
+      "id": "select_image_a",
+      "kind": "image-patch",
+      "input": "full_mcu_image",
+      "output": "selected_mcu_image",
+      "address": "0x0810C000",
+      "data": "0000"
+    },
+    {
+      "id": "read_image_a_version",
+      "kind": "image-extract-string",
+      "input": "selected_mcu_image",
+      "output": "image_a_version",
+      "address": "0x08010250",
+      "length": 7
+    },
+    {
+      "id": "read_image_b_version",
+      "kind": "image-extract-string",
+      "input": "selected_mcu_image",
+      "output": "image_b_version",
+      "address": "0x08110250",
+      "length": 7
+    },
+    {
+      "id": "validate_image_versions",
+      "kind": "assert-equal",
+      "left": "image_a_version",
+      "right": "image_b_version",
+      "message": "Image A and Image B firmware versions differ"
+    },
+    {
+      "id": "write_jlink_hex",
+      "kind": "image-output",
+      "input": "selected_mcu_image",
+      "name": "jlink_hex",
+      "path": "out/postbuild-mcu.hex",
+      "recordSize": 16
+    },
+    {
+      "id": "make_jlink_bin",
+      "kind": "image-to-binary",
+      "input": "selected_mcu_image",
+      "output": "jlink_bin",
+      "address": "0x08000000",
+      "length": "0x200000",
+      "fill": "0xFF"
+    },
+    {
+      "id": "write_jlink_bin",
+      "kind": "output",
+      "input": "jlink_bin",
+      "name": "jlink_bin",
+      "path": "out/postbuild-mcu.bin"
+    }
+  ]
+}

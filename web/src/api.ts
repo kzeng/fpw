@@ -1,6 +1,6 @@
 import type { OpenWorkflow, Workflow, WorkflowSummary } from "./workflow";
 
-export type HealthResponse = { status: string; service: string };
+export type HealthResponse = { status: string; service: string; version: string };
 export type RecentProject = { path: string; name: string; updatedAtUnixMs: number };
 export type RecentProjectsResponse = { projects: RecentProject[] };
 export type StepReport = { id: string; kind: string; status: "success" | "failed"; durationMs: number; message?: string };

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-nvr-archive",
+  "description": "Append a generated NVR-REG block to an existing imgAr archive.",
+  "steps": [
+    {
+      "id": "read_archive",
+      "kind": "input",
+      "name": "archive",
+      "path": "../target/nvr-imgar/base.bin"
+    },
+    {
+      "id": "generate_nvr",
+      "kind": "nvr-generate",
+      "output": "nvr_block",
+      "workbook": "../Postbuild/default_nvr/22339878-001_000_DR8_1600T_SIAN3_NVR_cfg_v0.9_sipho_default.xlsm",
+      "page": 254,
+      "bankStart": 8,
+      "bankEnd": 9,
+      "registerStart": 128,
+      "registerEnd": 255,
+      "baseAddress": "0x08002000",
+      "ignoreMaskRule": false,
+      "alternateBase": true,
+      "sheets": [
+        { "name": "8_254_Low", "bank": 8, "rowStart": 4, "rowEnd": 230, "dataColumn": 7 },
+        { "name": "9_254_Pg00", "bank": 9, "rowStart": 3, "rowEnd": 140, "dataColumn": 7 }
+      ]
+    },
+    {
+      "id": "append_nvr",
+      "kind": "nvr-append-archive",
+      "archive": "archive",
+      "nvr": "nvr_block",
+      "output": "archive_with_nvr",
+      "tool": "../Postbuild/imgAr/Release/imgAr.exe",
+      "encryption": "enc0"
+    },
+    {
+      "id": "write_archive",
+      "kind": "output",
+      "input": "archive_with_nvr",
+      "name": "release_archive",
+      "path": "../target/nvr-imgar/release-with-nvr.bin"
+    }
+  ]
+}
