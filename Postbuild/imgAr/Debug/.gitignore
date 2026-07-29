@@ -1,0 +1,11 @@
+*.recipe
+*.ilk
+*.pch
+*.pdb
+*.obj
+*.log
+*.obj
+*.idb
+*.tlog
+*.vcxproj.FileListAbsolute.txt
+*.vcxproj.CopyComplete
