@@ -92,6 +92,32 @@
       "message": "Image A and Image B firmware versions differ"
     },
     {
+      "kind": "imgar-append",
+      "id": "archive_image_a",
+      "input": "image_a",
+      "output": "release_image_a",
+      "tool": "../tools/imgAr.exe",
+      "fileType": "IMG-A",
+      "encryption": "enc0"
+    },
+    {
+      "kind": "imgar-append",
+      "id": "archive_image_b",
+      "archive": "release_image_a",
+      "input": "image_b",
+      "output": "release_mcu",
+      "tool": "../tools/imgAr.exe",
+      "fileType": "IMG-B",
+      "encryption": "enc0"
+    },
+    {
+      "kind": "output",
+      "id": "write_release",
+      "input": "release_mcu",
+      "name": "release_archive",
+      "path": "out/release-mcu.bin"
+    },
+    {
       "kind": "image-output",
       "id": "write_hex",
       "input": "selected_image",

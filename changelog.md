@@ -14,6 +14,7 @@ FPW 的重要版本变更记录在此文件中。
 - WebUI 新增 Postbuild MCU/DSP 模板卡片、Intel HEX 输入输出按钮和 Image/Postbuild 高级步骤表单。
 - 新增 `nvr-generate`、`nvr-inject-image`、`nvr-append-archive`，覆盖 NVR XLSM 解析、双 Bank 注入和 `imgAr.exe NVR-REG` 打包。
 - WebUI 新增 NVR 模板、NVR 操作面板及中英文字段说明。
+- 新增通用 `imgar-append` 步骤，支持从空 archive 开始封装 MCU IMG-A/IMG-B 及追加 DSP-N-A/DSP-N-B。
 
 ### Changed
 

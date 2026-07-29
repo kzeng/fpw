@@ -1,6 +1,6 @@
 # FPW - 固件打包工作流
 
-[English](README.md) | [User Manual](User-Manual.md) | [中文用户手册](User-Manual-CN.md) | [FWP Schema](docs/fwp-schema-v1.md)
+[English](README.md) | [User Manual](User-Manual.md) | [中文用户手册](User-Manual-CN.md) | [Postbuild MCU 中文向导](docs/Postbuild-MCU-Package-Guide-CN.md) | [FWP Schema](docs/fwp-schema-v1.md)
 
 FPW 是一个本地优先的固件打包工作流工具，用于可重复地处理原始二进制固件镜像。
 
@@ -13,12 +13,15 @@ Release 下载：[FPW 发布包](https://lite.box.com/s/03t30uatz10t4v3vc5l27nek
 - `.fwp` 是可纳入版本管理的 JSON 工作流文件，不依赖 WebUI 也能执行。
 - 目标平台为 Windows 和 Linux。
 
+Windows 发布包内置旧版归档工具 `tools/imgAr.exe`。位于 `workflows/` 的工作流应使用相对路径 `../tools/imgAr.exe`。
+
 ## 主要功能
 
 - 按数组顺序执行 `input`、`output`、`fill`、`delete`、`insert`、`merge`、`crc32` 和 `sha256` 步骤。
 - 支持保留绝对地址的 Intel HEX 输入、提取、叠加、补丁、HEX 输出和指定范围 BIN 转换。
 - WebUI 提供可见的 Postbuild MCU/DSP 模板入口及 Image/Postbuild 操作表单。
 - 支持解析 NVR XLSX/XLSM、修改寄存器数据、注入双 Bank 镜像，并通过 `imgAr.exe` 追加 `NVR-REG` 升级条目。
+- 支持使用 imgAr 创建 MCU `IMG-A`/`IMG-B` 和 DSP `DSP-N-A`/`DSP-N-B` Release archive 条目。
 - 生成 JSON/TXT 执行报告，记录命令、耗时、步骤状态和文件哈希。
 - WebUI 提供五阶段创建向导和工作流文件库。
 - 支持创建、打开、保存、复制、归档和导入工作流。

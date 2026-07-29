@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    model::{parse_hex_bytes, Workflow, WorkflowStep},
+    model::{parse_hex_bytes, ImgArFileType, Workflow, WorkflowStep},
     FpwError, Result,
 };
 
@@ -209,6 +209,46 @@ pub fn validate_workflow(workflow: &Workflow) -> Result<()> {
                         "{} encryption must be enc0 or enc1",
                         append.id
                     )));
+                }
+                artifacts.insert(append.output.clone(), ArtifactKind::Binary);
+            }
+            WorkflowStep::ImgArAppend(append) => {
+                if let Some(archive) = &append.archive {
+                    require_artifact(&artifacts, archive, &append.id, ArtifactKind::Binary)?;
+                }
+                let input_kind = match append.file_type {
+                    ImgArFileType::ImageA | ImgArFileType::ImageB => ArtifactKind::Image,
+                    ImgArFileType::DspA | ImgArFileType::DspB => ArtifactKind::Binary,
+                };
+                require_artifact(&artifacts, &append.input, &append.id, input_kind)?;
+                if append.tool.trim().is_empty() {
+                    return Err(FpwError::Message(format!("{} requires tool", append.id)));
+                }
+                if append.encryption != "enc0" && append.encryption != "enc1" {
+                    return Err(FpwError::Message(format!(
+                        "{} encryption must be enc0 or enc1",
+                        append.id
+                    )));
+                }
+                if matches!(append.file_type, ImgArFileType::DspA | ImgArFileType::DspB) {
+                    let name = append.input_file_name.as_deref().unwrap_or("");
+                    let suffix = if matches!(append.file_type, ImgArFileType::DspA) {
+                        "_A.bin"
+                    } else {
+                        "_B.bin"
+                    };
+                    let format_ok = name.len() == 23
+                        && name.starts_with("dsp_v")
+                        && name.ends_with(suffix)
+                        && &name[13..16] == "_ig"
+                        && matches!(name.as_bytes()[16], b'0' | b'1')
+                        && name[5..13].bytes().all(|byte| byte.is_ascii_hexdigit());
+                    if !format_ok {
+                        return Err(FpwError::Message(format!(
+                            "{} inputFileName must match dsp_vXXXXXXXX_igN{}",
+                            append.id, suffix
+                        )));
+                    }
                 }
                 artifacts.insert(append.output.clone(), ArtifactKind::Binary);
             }

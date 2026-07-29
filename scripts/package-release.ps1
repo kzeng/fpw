@@ -99,6 +99,7 @@ try {
 
     $requiredPaths = @(
         $sourceExe,
+        (Join-Path $repoRoot "tools\imgAr.exe"),
         (Join-Path $repoRoot "web\dist\index.html"),
         (Join-Path $repoRoot "web\dist\assets"),
         (Join-Path $repoRoot "README.md"),
@@ -116,6 +117,11 @@ try {
 
     New-Item -ItemType Directory -Force -Path $packageDirectory | Out-Null
     Copy-Item -LiteralPath $sourceExe -Destination (Join-Path $packageDirectory "fpw.exe")
+
+    $toolsDirectory = Join-Path $packageDirectory "tools"
+    New-Item -ItemType Directory -Force -Path $toolsDirectory | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repoRoot "tools\imgAr.exe") `
+        -Destination (Join-Path $toolsDirectory "imgAr.exe")
 
     $webDirectory = Join-Path $packageDirectory "web"
     New-Item -ItemType Directory -Force -Path $webDirectory | Out-Null
@@ -139,6 +145,10 @@ try {
     Copy-Item -LiteralPath (Join-Path $repoRoot "User-Manual.md") -Destination $packageDirectory
 
     $packagedExe = Join-Path $packageDirectory "fpw.exe"
+    $packagedImgAr = Join-Path $packageDirectory "tools\imgAr.exe"
+    if (-not (Test-Path -LiteralPath $packagedImgAr)) {
+        throw "Packaged imgAr executable is missing: $packagedImgAr"
+    }
     $reportedVersion = (& $packagedExe --version).Trim()
     if ($reportedVersion -ne "fpw $version") {
         throw "Packaged executable version mismatch: expected 'fpw $version', got '$reportedVersion'"

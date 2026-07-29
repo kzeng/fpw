@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-dsp-archive",
+  "description": "Append a DSP-N-A entry to an existing release archive.",
+  "steps": [
+    { "id": "read_archive", "kind": "input", "name": "archive", "path": "../target/imgar-release/release-mcu.bin" },
+    { "id": "read_dsp", "kind": "input", "name": "dsp_seed", "path": "fixtures/app.bin" },
+    { "id": "expand_dsp", "kind": "fill", "input": "dsp_seed", "output": "dsp", "offset": 26, "length": 602086, "value": "0xFF" },
+    {
+      "id": "archive_dsp",
+      "kind": "imgar-append",
+      "archive": "archive",
+      "input": "dsp",
+      "output": "release_mcu_dsp",
+      "tool": "../tools/imgAr.exe",
+      "fileType": "DSP-N-A",
+      "encryption": "enc0",
+      "inputFileName": "dsp_vE000F200_ig1_A.bin"
+    },
+    { "id": "write_release", "kind": "output", "input": "release_mcu_dsp", "name": "release_archive", "path": "../target/imgar-release/release-mcu-dsp.bin" }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "name": "postbuild-release-archive",
+  "description": "Create a release archive from MCU Image A and Image B with imgAr.",
+  "steps": [
+    {
+      "id": "read_image_a",
+      "kind": "image-input",
+      "name": "image_a",
+      "path": null
+    },
+    {
+      "id": "read_image_b",
+      "kind": "image-input",
+      "name": "image_b",
+      "path": null
+    },
+    {
+      "id": "archive_image_a",
+      "kind": "imgar-append",
+      "input": "image_a",
+      "output": "archive_a",
+      "tool": "../tools/imgAr.exe",
+      "fileType": "IMG-A",
+      "encryption": "enc0"
+    },
+    {
+      "id": "archive_image_b",
+      "kind": "imgar-append",
+      "archive": "archive_a",
+      "input": "image_b",
+      "output": "archive_ab",
+      "tool": "../tools/imgAr.exe",
+      "fileType": "IMG-B",
+      "encryption": "enc0"
+    },
+    {
+      "id": "write_release",
+      "kind": "output",
+      "input": "archive_ab",
+      "name": "release_archive",
+      "path": "../target/imgar-release/release-mcu.bin"
+    }
+  ]
+}

@@ -40,6 +40,8 @@ pub enum WorkflowStep {
     NvrPatchRegisters(NvrPatchRegistersStep),
     NvrInjectImage(NvrInjectImageStep),
     NvrAppendArchive(NvrAppendArchiveStep),
+    #[serde(rename = "imgar-append")]
+    ImgArAppend(ImgArAppendStep),
     Fill(FillStep),
     Delete(DeleteStep),
     Insert(InsertStep),
@@ -66,6 +68,7 @@ impl WorkflowStep {
             Self::NvrPatchRegisters(step) => &step.id,
             Self::NvrInjectImage(step) => &step.id,
             Self::NvrAppendArchive(step) => &step.id,
+            Self::ImgArAppend(step) => &step.id,
             Self::Fill(step) => &step.id,
             Self::Delete(step) => &step.id,
             Self::Insert(step) => &step.id,
@@ -92,6 +95,7 @@ impl WorkflowStep {
             Self::NvrPatchRegisters(step) => Some(&step.output),
             Self::NvrInjectImage(step) => Some(&step.output),
             Self::NvrAppendArchive(step) => Some(&step.output),
+            Self::ImgArAppend(step) => Some(&step.output),
             Self::Fill(step) => Some(&step.output),
             Self::Delete(step) => Some(&step.output),
             Self::Insert(step) => Some(&step.output),
@@ -365,6 +369,34 @@ pub struct NvrAppendArchiveStep {
     pub tool: String,
     #[serde(default = "default_imgar_encryption")]
     pub encryption: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImgArAppendStep {
+    pub id: String,
+    #[serde(default)]
+    pub archive: Option<String>,
+    pub input: String,
+    pub output: String,
+    pub tool: String,
+    pub file_type: ImgArFileType,
+    #[serde(default = "default_imgar_encryption")]
+    pub encryption: String,
+    #[serde(default)]
+    pub input_file_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ImgArFileType {
+    #[serde(rename = "IMG-A")]
+    ImageA,
+    #[serde(rename = "IMG-B")]
+    ImageB,
+    #[serde(rename = "DSP-N-A")]
+    DspA,
+    #[serde(rename = "DSP-N-B")]
+    DspB,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

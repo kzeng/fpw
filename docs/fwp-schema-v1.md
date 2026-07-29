@@ -431,9 +431,43 @@ Copies an existing archive and invokes an imgAr-compatible executable with file 
   "archive": "mcu_dsp_archive",
   "nvr": "nvr_block",
   "output": "mcu_dsp_nvr_archive",
-  "tool": "tools/imgAr.exe",
+  "tool": "../tools/imgAr.exe",
   "encryption": "enc0"
 }
 ```
 
 `encryption` must be `enc0` or `enc1`. A missing executable or non-zero exit status fails the workflow.
+
+### imgAr-append
+
+Creates or extends a device release archive using the packaged legacy imgAr tool.
+
+```json
+{
+  "id": "archive_image_a",
+  "kind": "imgar-append",
+  "input": "image_a",
+  "output": "archive_a",
+  "tool": "../tools/imgAr.exe",
+  "fileType": "IMG-A",
+  "encryption": "enc0"
+}
+```
+
+Omit `archive` for the first entry. Later entries reference the preceding binary archive:
+
+```json
+{
+  "id": "archive_dsp",
+  "kind": "imgar-append",
+  "archive": "archive_ab",
+  "input": "dsp",
+  "output": "archive_ab_dsp",
+  "tool": "../tools/imgAr.exe",
+  "fileType": "DSP-N-A",
+  "encryption": "enc0",
+  "inputFileName": "dsp_vE000F200_ig1_A.bin"
+}
+```
+
+`IMG-A` and `IMG-B` require image artifacts. `DSP-N-A` and `DSP-N-B` require binary artifacts of at least `0x7000` bytes. DSP `inputFileName` is mandatory because legacy imgAr parses the eight-digit version and `ig0/ig1` flag from fixed filename positions.

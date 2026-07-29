@@ -14,6 +14,7 @@ export type StepKind =
   | "nvr-patch-registers"
   | "nvr-inject-image"
   | "nvr-append-archive"
+  | "imgar-append"
   | "fill"
   | "delete"
   | "insert"
@@ -22,7 +23,7 @@ export type StepKind =
   | "sha256";
 
 export type BasicProcessingKind = "fill" | "delete" | "insert" | "merge" | "crc32" | "sha256";
-export type ImageProcessingKind = "image-extract" | "image-overlay" | "image-patch" | "image-to-binary" | "image-extract-string" | "assert-equal" | "image-insert-binary";
+export type ImageProcessingKind = "image-extract" | "image-overlay" | "image-patch" | "image-to-binary" | "image-extract-string" | "assert-equal" | "image-insert-binary" | "imgar-append";
 export type NvrProcessingKind = "nvr-generate" | "nvr-patch-registers" | "nvr-inject-image" | "nvr-append-archive";
 export type PostbuildTemplate = "mcu" | "dsp" | "nvr";
 
@@ -114,6 +115,8 @@ export function newImageProcessingStep(kind: ImageProcessingKind, index: number,
       return { id: `assert_equal_${suffix}`, kind, left: input, right: input, message: "Values differ" };
     case "image-insert-binary":
       return { id: `insert_binary_${suffix}`, kind, base: input, input: "", output: `image_with_binary_${suffix}`, maxLength: "0x93000", parts: [{ sourceOffset: "0x0", address: "0x08080000", length: "0x80000" }] };
+    case "imgar-append":
+      return { id: `imgar_append_${suffix}`, kind, archive: undefined, input, output: `release_archive_${suffix}`, tool: "../tools/imgAr.exe", fileType: "IMG-A", encryption: "enc0" };
   }
 }
 
@@ -127,7 +130,7 @@ export function newNvrProcessingStep(kind: NvrProcessingKind, index: number, inp
     case "nvr-inject-image":
       return { id: `nvr_inject_${suffix}`, kind, image: input, nvr: "", output: `image_with_nvr_${suffix}`, mirrorOffset: "0x100000" };
     case "nvr-append-archive":
-      return { id: `nvr_archive_${suffix}`, kind, archive: input, nvr: "", output: `archive_with_nvr_${suffix}`, tool: "tools/imgAr.exe", encryption: "enc0" };
+      return { id: `nvr_archive_${suffix}`, kind, archive: input, nvr: "", output: `archive_with_nvr_${suffix}`, tool: "../tools/imgAr.exe", encryption: "enc0" };
   }
 }
 
@@ -147,11 +150,14 @@ export function postbuildTemplate(template: PostbuildTemplate): Workflow {
     return {
       schemaVersion: 1,
       name: "postbuild-dsp-inject",
-      description: "Inject DSP P1/P2 data into an MCU Intel HEX image.",
+      description: "Inject DSP P1/P2 data into an MCU Intel HEX image and append DSP-N-A to an existing release archive.",
       steps: [
         { id: "read_mcu_image", kind: "image-input", name: "mcu_hex" },
         { id: "read_dsp", kind: "input", name: "dsp" },
+        { id: "read_release_archive", kind: "input", name: "release_archive" },
         { id: "inject_dsp", kind: "image-insert-binary", base: "mcu_hex", input: "dsp", output: "mcu_with_dsp", maxLength: "0x93000", parts: [{ sourceOffset: "0x0", address: "0x08080000", length: "0x80000" }, { sourceOffset: "0x80000", address: "0x08180000", length: "0x13000" }] },
+        { id: "archive_dsp", kind: "imgar-append", archive: "release_archive", input: "dsp", output: "release_mcu_dsp", tool: "../tools/imgAr.exe", fileType: "DSP-N-A", encryption: "enc0", inputFileName: "dsp_vE000F200_ig1_A.bin" },
+        { id: "write_dsp_release", kind: "output", input: "release_mcu_dsp", name: "release_archive", path: "out/release-mcu-dsp.bin" },
         { id: "write_dsp_hex", kind: "image-output", input: "mcu_with_dsp", name: "jlink_dsp_hex", path: "out/postbuild-mcu-dsp.hex", recordSize: 16 },
         { id: "make_dsp_bin", kind: "image-to-binary", input: "mcu_with_dsp", output: "jlink_dsp_bin", address: "0x08000000", length: "0x200000", fill: "0xFF" },
         { id: "write_dsp_bin", kind: "output", input: "jlink_dsp_bin", name: "jlink_dsp_bin", path: "out/postbuild-mcu-dsp.bin" },
@@ -174,6 +180,9 @@ export function postbuildTemplate(template: PostbuildTemplate): Workflow {
       { id: "version_a", kind: "image-extract-string", input: "selected_image", output: "image_a_version", address: "0x08010250", length: 7, trim: "null-space" },
       { id: "version_b", kind: "image-extract-string", input: "selected_image", output: "image_b_version", address: "0x08110250", length: 7, trim: "null-space" },
       { id: "check_versions", kind: "assert-equal", left: "image_a_version", right: "image_b_version", message: "Image A and Image B firmware versions differ" },
+      { id: "archive_image_a", kind: "imgar-append", input: "image_a", output: "release_image_a", tool: "../tools/imgAr.exe", fileType: "IMG-A", encryption: "enc0" },
+      { id: "archive_image_b", kind: "imgar-append", archive: "release_image_a", input: "image_b", output: "release_mcu", tool: "../tools/imgAr.exe", fileType: "IMG-B", encryption: "enc0" },
+      { id: "write_release", kind: "output", input: "release_mcu", name: "release_archive", path: "out/release-mcu.bin" },
       { id: "write_hex", kind: "image-output", input: "selected_image", name: "jlink_hex", path: "out/postbuild-mcu.hex", recordSize: 16 },
       { id: "make_bin", kind: "image-to-binary", input: "selected_image", output: "jlink_bin", address: "0x08000000", length: "0x200000", fill: "0xFF" },
       { id: "write_bin", kind: "output", input: "jlink_bin", name: "jlink_bin", path: "out/postbuild-mcu.bin" },

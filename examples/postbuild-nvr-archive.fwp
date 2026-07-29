@@ -13,18 +13,17 @@
       "id": "generate_nvr",
       "kind": "nvr-generate",
       "output": "nvr_block",
-      "workbook": "../Postbuild/default_nvr/22339878-001_000_DR8_1600T_SIAN3_NVR_cfg_v0.9_sipho_default.xlsm",
+      "workbook": "../workflows/default_nvr/config.xlsm",
       "page": 254,
-      "bankStart": 8,
-      "bankEnd": 9,
+      "bankStart": 0,
+      "bankEnd": 0,
       "registerStart": 128,
       "registerEnd": 255,
       "baseAddress": "0x08002000",
       "ignoreMaskRule": false,
-      "alternateBase": true,
+      "alternateBase": false,
       "sheets": [
-        { "name": "8_254_Low", "bank": 8, "rowStart": 4, "rowEnd": 230, "dataColumn": 7 },
-        { "name": "9_254_Pg00", "bank": 9, "rowStart": 3, "rowEnd": 140, "dataColumn": 7 }
+        { "name": "0_254", "bank": 0, "rowStart": 3, "rowEnd": 146, "dataColumn": 7 }
       ]
     },
     {
@@ -33,7 +32,7 @@
       "archive": "archive",
       "nvr": "nvr_block",
       "output": "archive_with_nvr",
-      "tool": "../Postbuild/imgAr/Release/imgAr.exe",
+      "tool": "../tools/imgAr.exe",
       "encryption": "enc0"
     },
     {

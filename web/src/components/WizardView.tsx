@@ -16,7 +16,7 @@ import {
 import { useI18n } from "../i18n";
 
 const processingKinds: BasicProcessingKind[] = ["fill", "delete", "insert", "merge", "crc32", "sha256"];
-const imageProcessingKinds: ImageProcessingKind[] = ["image-extract", "image-overlay", "image-patch", "image-to-binary", "image-extract-string", "assert-equal", "image-insert-binary"];
+const imageProcessingKinds: ImageProcessingKind[] = ["image-extract", "image-overlay", "image-patch", "image-to-binary", "image-extract-string", "assert-equal", "image-insert-binary", "imgar-append"];
 const nvrProcessingKinds: NvrProcessingKind[] = ["nvr-generate", "nvr-patch-registers", "nvr-inject-image", "nvr-append-archive"];
 const operationHelp: Record<BasicProcessingKind | ImageProcessingKind | NvrProcessingKind, string> = {
   "fill": "Copy a BIN artifact and overwrite a byte range with one repeated value. Configure input, output, offset, length, and fill value. Use 0xFF to erase/reserve a firmware region without changing image length.",
@@ -32,6 +32,7 @@ const operationHelp: Record<BasicProcessingKind | ImageProcessingKind | NvrProce
   "image-extract-string": "Read an ASCII string from an absolute image address into a text artifact. Configure address, length, and trim mode. Commonly used to read firmware versions.",
   "assert-equal": "Compare two text artifacts and stop the workflow when they differ. Use it after extracting Image A and Image B versions to prevent mismatched releases.",
   "image-insert-binary": "Split a BIN artifact into source ranges and insert each range at an absolute address in a sparse image. Use it for DSP P1/P2 injection and enforce maxLength when required.",
+  "imgar-append": "Create or extend a device release archive with imgAr. IMG-A/B consume Intel HEX image artifacts; DSP-N-A/B consume BIN artifacts and require a versioned inputFileName. Leave archive empty for the first entry.",
   "nvr-generate": "Read NVR register values from an XLSX/XLSM workbook. Configure page, bank/register range, Flash base address, version cell, and Sheet mappings. Produces an NVR artifact with imgAr metadata.",
   "nvr-patch-registers": "Create a derived NVR artifact by writing hex bytes to selected bank/register addresses. Use it for PCB revision, IHS/RHS, cooled, DSP, or AA product variants.",
   "nvr-inject-image": "Insert an NVR artifact at its calculated Flash address in an Intel HEX image. Set mirrorOffset, such as 0x100000, to write the same NVR into Image B.",
@@ -272,10 +273,11 @@ function StepEditor({ step, index, allSteps, update, remove, move }: {
         {step.kind === "image-extract-string" ? <>{select("Source image artifact", "input")}{field("Text artifact", "output")}{field("Absolute address", "address", "0x08010250")}{field("Length", "length", "7")}<label>{t("Trim mode")}<select value={String(step.trim ?? "null-space")} onChange={(event) => update({ trim: event.target.value })}><option value="null-space">null-space</option><option value="none">none</option></select></label></> : null}
         {step.kind === "assert-equal" ? <>{select("Left text artifact", "left")}{select("Right text artifact", "right")}{field("Failure message", "message", "Values differ")}</> : null}
         {step.kind === "image-insert-binary" ? <ImageInsertBinaryFields step={step} artifacts={artifacts} update={update} /> : null}
+        {step.kind === "imgar-append" ? <ImgArAppendFields step={step} artifacts={artifacts} update={update} /> : null}
         {step.kind === "nvr-generate" ? <NvrGenerateFields step={step} update={update} /> : null}
         {step.kind === "nvr-patch-registers" ? <NvrPatchFields step={step} artifacts={artifacts} update={update} /> : null}
         {step.kind === "nvr-inject-image" ? <>{select("Source image artifact", "image")}{select("NVR artifact", "nvr")}{field("Output artifact", "output")}{field("Mirror bank offset", "mirrorOffset", "0x100000")}<p className="stepHint">{t("Leave mirror offset empty to inject only one image bank.")}</p></> : null}
-        {step.kind === "nvr-append-archive" ? <>{select("Archive artifact", "archive")}{select("NVR artifact", "nvr")}{field("Output artifact", "output")}{field("imgAr executable", "tool", "tools/imgAr.exe")}<label>{t("Encryption mode")}<select value={String(step.encryption ?? "enc0")} onChange={(event) => update({ encryption: event.target.value })}><option value="enc0">enc0</option><option value="enc1">enc1</option></select></label></> : null}
+        {step.kind === "nvr-append-archive" ? <>{select("Archive artifact", "archive")}{select("NVR artifact", "nvr")}{field("Output artifact", "output")}{field("imgAr executable", "tool", "../tools/imgAr.exe")}<label>{t("Encryption mode")}<select value={String(step.encryption ?? "enc0")} onChange={(event) => update({ encryption: event.target.value })}><option value="enc0">enc0</option><option value="enc1">enc1</option></select></label></> : null}
       </div>
     </article>
   );
@@ -285,6 +287,14 @@ function NvrPatchFields({ step, artifacts, update }: { step: WorkflowStep; artif
   const { t } = useI18n();
   const patches = (step.patches ?? []) as Array<{ bank: number; register: number; data: string }>;
   return <><label>{t("NVR artifact")}<select value={String(step.input ?? "")} onChange={(event) => update({ input: event.target.value })}>{artifacts.map((artifact) => <option key={artifact}>{artifact}</option>)}</select></label><label>{t("Output artifact")}<input value={String(step.output ?? "")} onChange={(event) => update({ output: event.target.value })} /></label><div className="mergeParts"><b>{t("Register patches")}</b>{patches.map((patch, index) => <div key={index}><input type="number" value={patch.bank} title={t("Bank")} onChange={(event) => update({ patches: patches.map((item, itemIndex) => itemIndex === index ? { ...item, bank: Number(event.target.value) } : item) })} /><input type="number" value={patch.register} title={t("Register")} onChange={(event) => update({ patches: patches.map((item, itemIndex) => itemIndex === index ? { ...item, register: Number(event.target.value) } : item) })} /><input value={patch.data} title={t("Hex bytes")} onChange={(event) => update({ patches: patches.map((item, itemIndex) => itemIndex === index ? { ...item, data: event.target.value } : item) })} /><button className="dangerButton iconButton" onClick={() => update({ patches: patches.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button onClick={() => update({ patches: [...patches, { bank: 0, register: 128, data: "00" }] })}><Plus size={15} />{t("Add register patch")}</button></div></>;
+}
+
+function ImgArAppendFields({ step, artifacts, update }: { step: WorkflowStep; artifacts: string[]; update: (patch: Partial<WorkflowStep>) => void }) {
+  const { t } = useI18n();
+  const selectArtifact = (label: string, name: string, optional = false) => <label>{t(label)}<select value={String(step[name] ?? "")} onChange={(event) => update({ [name]: event.target.value || undefined })}>{optional ? <option value="">{t("None (start a new archive)")}</option> : <option value="">{t("Select artifact")}</option>}{artifacts.map((artifact) => <option key={artifact}>{artifact}</option>)}</select></label>;
+  const fileType = String(step.fileType ?? "IMG-A");
+  const dsp = fileType.startsWith("DSP");
+  return <>{selectArtifact("Existing archive artifact", "archive", true)}{selectArtifact(dsp ? "Binary input artifact" : "Source image artifact", "input")}<label>{t("Output artifact")}<input value={String(step.output ?? "")} onChange={(event) => update({ output: event.target.value })} /></label><label>{t("imgAr file type")}<select value={fileType} onChange={(event) => update({ fileType: event.target.value, inputFileName: event.target.value.startsWith("DSP") ? "dsp_vE000F200_ig1_A.bin" : undefined })}><option>IMG-A</option><option>IMG-B</option><option>DSP-N-A</option><option>DSP-N-B</option></select></label><label>{t("imgAr executable")}<input value={String(step.tool ?? "")} onChange={(event) => update({ tool: event.target.value })} placeholder="../tools/imgAr.exe" /></label><label>{t("Encryption mode")}<select value={String(step.encryption ?? "enc0")} onChange={(event) => update({ encryption: event.target.value })}><option value="enc0">enc0</option><option value="enc1">enc1</option></select></label>{dsp ? <label>{t("imgAr input file name")}<input value={String(step.inputFileName ?? "")} onChange={(event) => update({ inputFileName: event.target.value })} placeholder="dsp_vE000F200_ig1_A.bin" /><small>{t("DSP name format carries version and skip-header metadata required by legacy imgAr.")}</small></label> : null}</>;
 }
 
 function NvrGenerateFields({ step, update }: { step: WorkflowStep; update: (patch: Partial<WorkflowStep>) => void }) {

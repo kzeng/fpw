@@ -9,7 +9,9 @@ use std::{
 
 use crate::{
     image::SparseImage,
-    model::{parse_hex_bytes, Endian, ImageOverlap, StringTrim, Workflow, WorkflowStep},
+    model::{
+        parse_hex_bytes, Endian, ImageOverlap, ImgArFileType, StringTrim, Workflow, WorkflowStep,
+    },
     nvr::{self, NvrBlock},
     report::{unix_ms_now, ExecutionReport, FileReport, ReportStatus, StepReport},
     validate_workflow, FpwError, Result,
@@ -100,6 +102,12 @@ pub fn preview_workflow(workflow: &Workflow) -> Result<Vec<String>> {
             WorkflowStep::NvrAppendArchive(step) => format!(
                 "append NVR {} to archive {} with imgAr -> {}",
                 step.nvr, step.archive, step.output
+            ),
+            WorkflowStep::ImgArAppend(step) => format!(
+                "append {} {} to imgAr archive -> {}",
+                img_ar_file_type(&step.file_type),
+                step.input,
+                step.output
             ),
             WorkflowStep::Fill(step) => format!("fill {} -> {}", step.input, step.output),
             WorkflowStep::Delete(step) => format!(
@@ -457,6 +465,99 @@ fn execute_step(
             let _ = fs::remove_dir_all(&temp_dir);
             artifacts.insert(step.output.clone(), Artifact::Binary(bytes));
         }
+        WorkflowStep::ImgArAppend(step) => {
+            let temp_dir = base_dir.join(format!(".fpw-imgar-{}-{}", std::process::id(), step.id));
+            if temp_dir.exists() {
+                fs::remove_dir_all(&temp_dir)?;
+            }
+            fs::create_dir_all(&temp_dir)?;
+            let archive_path = temp_dir.join("archive.bin");
+            if let Some(archive) = &step.archive {
+                fs::write(&archive_path, binary_artifact(artifacts, archive)?)?;
+            }
+            let input_name = match step.file_type {
+                ImgArFileType::ImageA | ImgArFileType::ImageB => step
+                    .input_file_name
+                    .clone()
+                    .unwrap_or_else(|| "input.hex".to_string()),
+                ImgArFileType::DspA | ImgArFileType::DspB => {
+                    step.input_file_name.clone().ok_or_else(|| {
+                        FpwError::Message(format!(
+                            "{} requires inputFileName such as dsp_vE000F200_ig1_A.bin",
+                            step.id
+                        ))
+                    })?
+                }
+            };
+            if Path::new(&input_name)
+                .file_name()
+                .and_then(|value| value.to_str())
+                != Some(&input_name)
+            {
+                return Err(FpwError::Message(format!(
+                    "{} inputFileName must be a file name without directories",
+                    step.id
+                )));
+            }
+            let input_path = temp_dir.join(&input_name);
+            match step.file_type {
+                ImgArFileType::ImageA | ImgArFileType::ImageB => {
+                    fs::write(
+                        &input_path,
+                        image_artifact(artifacts, &step.input)?.to_intel_hex(16)?,
+                    )?;
+                }
+                ImgArFileType::DspA | ImgArFileType::DspB => {
+                    let dsp = binary_artifact(artifacts, &step.input)?;
+                    if dsp.len() < 0x7000 {
+                        return Err(FpwError::Message(format!(
+                            "{} DSP input is {} bytes; legacy imgAr requires at least 0x7000 bytes",
+                            step.id,
+                            dsp.len()
+                        )));
+                    }
+                    fs::write(&input_path, dsp)?;
+                }
+            }
+            let tool = fs::canonicalize(resolve_path(base_dir, &step.tool)).map_err(|error| {
+                FpwError::Message(format!(
+                    "{} cannot resolve imgAr executable {}: {error}",
+                    step.id, step.tool
+                ))
+            })?;
+            let (date, time) = current_utc_imgar_timestamp();
+            let result = Command::new(&tool)
+                .current_dir(&temp_dir)
+                .arg("archive.bin")
+                .arg(&step.encryption)
+                .arg(img_ar_file_type(&step.file_type))
+                .arg(date)
+                .arg(time)
+                .arg(&input_name)
+                .output()
+                .map_err(|error| {
+                    FpwError::Message(format!(
+                        "{} cannot start {}: {error}",
+                        step.id,
+                        tool.display()
+                    ))
+                })?;
+            let stderr = String::from_utf8_lossy(&result.stderr);
+            let stdout = String::from_utf8_lossy(&result.stdout);
+            let legacy_success = result.status.code() == Some(1)
+                && archive_path.is_file()
+                && (stderr.contains("write to ReleaseBin")
+                    || stdout.contains("write to ReleaseBin"));
+            if !result.status.success() && !legacy_success {
+                return Err(FpwError::Message(format!(
+                    "{} imgAr failed with {}: {}{}",
+                    step.id, result.status, stdout, stderr
+                )));
+            }
+            let bytes = fs::read(&archive_path)?;
+            let _ = fs::remove_dir_all(&temp_dir);
+            artifacts.insert(step.output.clone(), Artifact::Binary(bytes));
+        }
         WorkflowStep::Fill(step) => {
             let mut bytes = binary_artifact(artifacts, &step.input)?.clone();
             let offset = step.offset.parse_usize()?;
@@ -581,6 +682,15 @@ fn current_utc_imgar_timestamp() -> (String, String) {
             day_seconds % 60
         ),
     )
+}
+
+fn img_ar_file_type(file_type: &ImgArFileType) -> &'static str {
+    match file_type {
+        ImgArFileType::ImageA => "IMG-A",
+        ImgArFileType::ImageB => "IMG-B",
+        ImgArFileType::DspA => "DSP-N-A",
+        ImgArFileType::DspB => "DSP-N-B",
+    }
 }
 
 fn binary_artifact<'a>(
@@ -717,6 +827,7 @@ fn step_kind(step: &WorkflowStep) -> &'static str {
         WorkflowStep::NvrPatchRegisters(_) => "nvr-patch-registers",
         WorkflowStep::NvrInjectImage(_) => "nvr-inject-image",
         WorkflowStep::NvrAppendArchive(_) => "nvr-append-archive",
+        WorkflowStep::ImgArAppend(_) => "imgar-append",
         WorkflowStep::Fill(_) => "fill",
         WorkflowStep::Delete(_) => "delete",
         WorkflowStep::Insert(_) => "insert",

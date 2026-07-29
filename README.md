@@ -13,12 +13,16 @@ Releases: [FPW release downloads](https://lite.box.com/s/03t30uatz10t4v3vc5l27ne
 - `.fwp` files are versioned JSON workflow definitions that can run with or without the WebUI.
 - Windows and Linux are the target platforms.
 
+The Windows release package includes the legacy archive helper at `tools/imgAr.exe`.
+Workflows stored under `workflows/` reference it as `../tools/imgAr.exe`.
+
 ## Features
 
 - Ordered raw `.bin` processing with `input`, `output`, `fill`, `delete`, `insert`, `merge`, `crc32`, and `sha256` steps.
 - Address-aware Intel HEX input, extraction, overlay, patching, HEX output, and explicit-range BIN conversion.
 - Visible Postbuild MCU/DSP templates and guided Image/Postbuild operation forms in the WebUI.
 - NVR XLSX/XLSM parsing, register patching, dual-bank image injection, and `imgAr.exe` `NVR-REG` archive append steps.
+- imgAr release archive creation for MCU `IMG-A`/`IMG-B` and DSP `DSP-N-A`/`DSP-N-B` entries.
 - JSON and TXT execution reports containing the command, timing, step status, and file hashes.
 - Five-stage WebUI authoring wizard and a managed workflow library.
 - Create, open, save, duplicate, archive, and import workflow operations.
